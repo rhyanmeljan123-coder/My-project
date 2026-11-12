@@ -84,6 +84,11 @@ public static class DungeonTaleBootstrap
         game.chainSprite = FindSprite("Prop_Chain_A");
         game.boneSprite = FindSprite("Prop_Bone");
         game.carpetSprite = FindSprite("Carpet_C");
+        game.packChestSprite = FindSprite("chest_1_0");
+        game.packTorchSprite = FindSprite("torch_1_0");
+        game.packSpikeSprite = FindSprite("peaks_1_0");
+        game.packCoinSprite = FindSprite("coin_1_0");
+        game.packFlaskSprite = FindSprite("flasks_1_1_0");
 
         var cam = Camera.main;
         if (!cam) { var c = new GameObject("Main Camera"); cam = c.AddComponent<Camera>(); cam.tag = "MainCamera"; c.AddComponent<AudioListener>(); }
@@ -115,7 +120,7 @@ public static class DungeonTaleBootstrap
     static Sprite FindSprite(string n) {
         foreach (var id in AssetDatabase.FindAssets("t:Texture2D")) {
             var p = AssetDatabase.GUIDToAssetPath(id);
-            if (!p.StartsWith(Root + "Sprites/") && !p.StartsWith("Assets/player/")) continue;
+            if (!p.StartsWith(Root + "Sprites/") && !p.StartsWith("Assets/player/") && !p.StartsWith("Assets/2D Pixel Dungeon Asset Pack/")) continue;
             foreach (var o in AssetDatabase.LoadAllAssetsAtPath(p))
                 if (o is Sprite s && s.name == n) return s;
         }
