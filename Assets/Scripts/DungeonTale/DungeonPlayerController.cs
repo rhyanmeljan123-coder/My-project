@@ -109,13 +109,15 @@ public class DungeonPlayerController : MonoBehaviour
         else
             currentAttackFrames = facingDirection.y > 0 ? game.attackUpFrames : game.attackDownFrames;
 
-        if (currentAttackFrames == null || currentAttackFrames.Length == 0) return;
-
-        attackFrame = 0;
-        attackFrameTimer = 0f;
-        float frameDuration = 1f / Mathf.Max(1f, attackFramesPerSecond);
-        swingTimer = currentAttackFrames.Length * frameDuration;
-        if (currentAttackFrames[0] != null) spriteRenderer.sprite = currentAttackFrames[0];
+        bool hasSwingAnimation = currentAttackFrames != null && currentAttackFrames.Length > 0;
+        if (hasSwingAnimation)
+        {
+            attackFrame = 0;
+            attackFrameTimer = 0f;
+            float frameDuration = 1f / Mathf.Max(1f, attackFramesPerSecond);
+            swingTimer = currentAttackFrames.Length * frameDuration;
+            if (currentAttackFrames[0] != null) spriteRenderer.sprite = currentAttackFrames[0];
+        }
         Collider2D[] hits = Physics2D.OverlapCircleAll((Vector2)transform.position + facingDirection * 0.65f, attackRange);
         foreach (Collider2D hit in hits)
         {
