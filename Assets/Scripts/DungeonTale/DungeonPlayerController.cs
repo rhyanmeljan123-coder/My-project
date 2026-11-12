@@ -9,7 +9,7 @@ public class DungeonPlayerController : MonoBehaviour
     public float attackRange = 1.35f;
     public float attackCooldown = 0.35f;
     public float walkFramesPerSecond = 9f;
-    public float attackFramesPerSecond = 8f;
+    public float attackFramesPerSecond = 10f;
 
     private Rigidbody2D body;
     private SpriteRenderer spriteRenderer;
