@@ -28,13 +28,13 @@ public static class DungeonTaleBootstrap
         var wallMap = wallGo.GetComponent<Tilemap>();
         wallGo.GetComponent<TilemapRenderer>().sortingOrder = 2;
 
-        TileBase[] floors = { floor, FindTile("Floor Green"), FindTile("Floor Metal"), FindTile("Floor Red"), FindTile("Floor Wood"), FindTile("Floor Flash") };
         const int w = 35, h = 25;
         for (int x = -w/2; x <= w/2; x++)
         for (int y = -h/2; y <= h/2; y++) {
             var c = new Vector3Int(x,y,0);
-            int variant = Mathf.Abs((x * 13 + y * 7) % floors.Length);
-            floorMap.SetTile(c, floors[variant] ? floors[variant] : floor);
+            // Use one consistent base floor tile. Mixing the themed floor tiles
+            // across every cell made the dungeon look like a scrambled atlas.
+            floorMap.SetTile(c, floor);
             bool border = x == -w/2 || x == w/2 || y == -h/2 || y == h/2;
             bool pillar = (x == -8 || x == 8) && (y == -6 || y == 6);
             bool divider = x == 0 && y >= -7 && y <= 7 && y != 0;
