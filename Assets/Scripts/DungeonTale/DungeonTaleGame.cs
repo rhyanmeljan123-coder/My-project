@@ -167,4 +167,35 @@ public class DungeonTaleGame : MonoBehaviour
     public void ReachExit(){if(enemiesRemaining>0){ShowMessage("Defeat every monster first!");return;}if(!hasKey){ShowMessage("The exit is locked. Find the dungeon key!");return;}finished=true;ShowMessage("DUNGEON CLEARED! Gold: "+coins+" - Press R to play again");}
     void Update(){if(Keyboard.current==null)return;if(Keyboard.current.eKey.wasPressedThisFrame)UsePotion();if(finished&&Keyboard.current.rKey.wasPressedThisFrame)SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);}
     public bool IsFinished(){return finished;}
+
+    // Fallback HUD drawn directly by Unity's IMGUI system. This remains visible
+    // even if the runtime Canvas/UI font setup fails in a project version.
+    void OnGUI()
+    {
+        const float x = 18f;
+        const float y = 18f;
+        const float barWidth = 250f;
+        const float barHeight = 24f;
+
+        GUI.color = new Color(0.02f, 0.025f, 0.035f, 0.95f);
+        GUI.Box(new Rect(x, y, barWidth + 16f, 58f), GUIContent.none);
+
+        GUI.color = Color.white;
+        GUI.Label(new Rect(x + 8f, y + 3f, barWidth, 20f),
+            "HEALTH  " + playerHealth + " / " + maxHealth);
+
+        GUI.color = new Color(0.12f, 0.14f, 0.17f, 1f);
+        GUI.Box(new Rect(x + 8f, y + 27f, barWidth, barHeight), GUIContent.none);
+
+        float ratio = maxHealth > 0 ? Mathf.Clamp01((float)playerHealth / maxHealth) : 0f;
+        GUI.color = playerHealth <= 2 ? new Color(0.95f, 0.12f, 0.1f) :
+                    playerHealth <= 4 ? new Color(1f, 0.62f, 0.08f) :
+                    new Color(0.15f, 0.85f, 0.28f);
+        GUI.DrawTexture(new Rect(x + 11f, y + 30f, (barWidth - 6f) * ratio, barHeight - 6f), Texture2D.whiteTexture);
+
+        GUI.color = Color.white;
+        GUI.Label(new Rect(x + 8f, y + 62f, 520f, 26f),
+            "GOLD: " + coins + "     POTIONS: " + potions + "     MONSTERS: " + enemiesRemaining);
+    }
+
 }
