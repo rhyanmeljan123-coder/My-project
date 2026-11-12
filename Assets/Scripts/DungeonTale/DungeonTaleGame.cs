@@ -18,6 +18,8 @@ public class DungeonTaleGame : MonoBehaviour
     public int playerHealth = 6, maxHealth = 6, coins, potions;
     public int enemiesRemaining = 8;
     private Text hud, message;
+    private Image healthFill;
+    private Text healthLabel;
     private Transform player;
     private bool finished, hasKey;
     private float invulnerableUntil;
@@ -82,6 +84,7 @@ public class DungeonTaleGame : MonoBehaviour
         var canvasGo=new GameObject("Dungeon HUD");var canvas=canvasGo.AddComponent<Canvas>();canvas.renderMode=RenderMode.ScreenSpaceOverlay;
         canvasGo.AddComponent<CanvasScaler>().uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;canvasGo.AddComponent<GraphicRaycaster>();
         hud=MakeText(canvas.transform,"HUD",new Vector2(18,-16),new Vector2(800,42),21,TextAnchor.UpperLeft);
+        CreateHealthBar(canvas.transform);
         message=MakeText(canvas.transform,"Message",new Vector2(0,18),new Vector2(850,54),20,TextAnchor.LowerCenter);
         message.rectTransform.anchorMin=new Vector2(.5f,0);message.rectTransform.anchorMax=new Vector2(.5f,0);
         message.text="WASD / Arrows: Move     SPACE: Attack     E: Use potion";
@@ -90,7 +93,40 @@ public class DungeonTaleGame : MonoBehaviour
         var g=new GameObject(n);g.transform.SetParent(parent,false);var rt=g.AddComponent<RectTransform>();rt.anchorMin=new Vector2(0,1);rt.anchorMax=new Vector2(0,1);rt.pivot=new Vector2(0,1);rt.anchoredPosition=pos;rt.sizeDelta=size;
         var t=g.AddComponent<Text>();t.font=Resources.GetBuiltinResource<Font>("Arial.ttf");t.fontSize=fs;t.color=Color.white;t.alignment=align;t.horizontalOverflow=HorizontalWrapMode.Overflow;return t;
     }
-    public void UpdateHud(){if(hud)hud.text=$"DUNGEON TALE     HP: {playerHealth}/{maxHealth}     GOLD: {coins}     POTIONS: {potions}     MONSTERS: {enemiesRemaining}";}
+    void CreateHealthBar(Transform parent)
+    {
+        var background = new GameObject("Health Bar Background", typeof(RectTransform), typeof(Image));
+        background.transform.SetParent(parent, false);
+        var bgRect = background.GetComponent<RectTransform>();
+        bgRect.anchorMin = new Vector2(0, 1); bgRect.anchorMax = new Vector2(0, 1);
+        bgRect.pivot = new Vector2(0, 1); bgRect.anchoredPosition = new Vector2(18, -48);
+        bgRect.sizeDelta = new Vector2(250, 24);
+        background.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.15f, 0.95f);
+
+        var fill = new GameObject("Health Bar Fill", typeof(RectTransform), typeof(Image));
+        fill.transform.SetParent(background.transform, false);
+        var fillRect = fill.GetComponent<RectTransform>();
+        fillRect.anchorMin = Vector2.zero; fillRect.anchorMax = Vector2.one;
+        fillRect.offsetMin = new Vector2(3, 3); fillRect.offsetMax = new Vector2(-3, -3);
+        healthFill = fill.GetComponent<Image>();
+        healthFill.type = Image.Type.Filled;
+        healthFill.fillMethod = Image.FillMethod.Horizontal;
+        healthFill.fillOrigin = (int)Image.OriginHorizontal.Left;
+        healthFill.color = new Color(0.2f, 0.85f, 0.35f, 1f);
+
+        healthLabel = MakeText(parent, "Health Label", new Vector2(278, -48), new Vector2(120, 28), 18, TextAnchor.UpperLeft);
+    }
+
+    public void UpdateHud()
+    {
+        if (hud) hud.text = $"DUNGEON TALE     GOLD: {coins}     POTIONS: {potions}     MONSTERS: {enemiesRemaining}";
+        if (healthFill)
+        {
+            healthFill.fillAmount = maxHealth > 0 ? Mathf.Clamp01((float)playerHealth / maxHealth) : 0f;
+            healthFill.color = playerHealth <= 2 ? new Color(0.9f, 0.16f, 0.12f) : playerHealth <= 4 ? new Color(1f, 0.65f, 0.12f) : new Color(0.2f, 0.85f, 0.35f);
+        }
+        if (healthLabel) healthLabel.text = $"HP {playerHealth}/{maxHealth}";
+    }
     public void ShowMessage(string s){if(message)message.text=s;}
     public void DamagePlayer(){if(finished||Time.time<invulnerableUntil)return;invulnerableUntil=Time.time+0.8f;playerHealth--;UpdateHud();if(playerHealth<=0){finished=true;ShowMessage("YOU WERE DEFEATED - Press R to restart");}}
     public void EnemyDefeated(){enemiesRemaining=Mathf.Max(0,enemiesRemaining-1);UpdateHud();if(enemiesRemaining==0)ShowMessage(hasKey?"All monsters defeated! Reach the exit.":"All monsters defeated! Find the key and reach the exit.");}
