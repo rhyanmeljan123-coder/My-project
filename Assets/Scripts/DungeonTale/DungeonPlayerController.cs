@@ -21,6 +21,7 @@ public class DungeonPlayerController : MonoBehaviour
     private Sprite[] walkSprites = new Sprite[0];
     private float swingTimer;
     private int attackFrame;
+    private float attackFrameTimer;
     private Sprite[] currentWalkFrames = new Sprite[0];
     private Vector2 facingDirection = Vector2.right;
 
@@ -62,7 +63,8 @@ public class DungeonPlayerController : MonoBehaviour
         if (swingTimer > 0f)
         {
             AnimateAttack();
-            swingTimer -= Time.deltaTime;
+            swingTimer = Mathf.Max(0f, swingTimer - Time.deltaTime);
+            if (swingTimer <= 0f) RestoreMovementSprite();
         }
         else
         {
@@ -71,7 +73,7 @@ public class DungeonPlayerController : MonoBehaviour
         }
 
         Keyboard keyboard = Keyboard.current;
-        if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame && Time.time >= nextAttack)
+        if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame && swingTimer <= 0f && Time.time >= nextAttack)
         {
             nextAttack = Time.time + attackCooldown;
             Attack();
@@ -98,7 +100,11 @@ public class DungeonPlayerController : MonoBehaviour
 
     void Attack()
     {
+        if (game == null || game.playerAttackFrames == null || game.playerAttackFrames.Length == 0) return;
         swingTimer = swordSwingDuration;
+        attackFrame = 0;
+        attackFrameTimer = 0f;
+        if (game.playerAttackFrames[0] != null) spriteRenderer.sprite = game.playerAttackFrames[0];
         Collider2D[] hits = Physics2D.OverlapCircleAll((Vector2)transform.position + facingDirection * 0.65f, attackRange);
         foreach (Collider2D hit in hits)
         {
@@ -145,11 +151,32 @@ public class DungeonPlayerController : MonoBehaviour
     void AnimateAttack()
     {
         if (spriteRenderer == null || game == null || game.playerAttackFrames == null || game.playerAttackFrames.Length == 0) return;
-        float elapsed = swordSwingDuration - swingTimer;
+
+        // SpriteRenderer shows one sprite only. Advance to the next attack frame
+        // after its own time slice; do not show the whole sequence together.
         float frameDuration = swordSwingDuration / game.playerAttackFrames.Length;
-        attackFrame = Mathf.Clamp(Mathf.FloorToInt(elapsed / Mathf.Max(0.001f, frameDuration)), 0, game.playerAttackFrames.Length - 1);
-        Sprite frame = game.playerAttackFrames[attackFrame];
-        if (frame != null) spriteRenderer.sprite = frame;
+        attackFrameTimer += Time.deltaTime;
+        while (attackFrameTimer >= frameDuration && attackFrame < game.playerAttackFrames.Length - 1)
+        {
+            attackFrameTimer -= frameDuration;
+            attackFrame++;
+            Sprite nextFrame = game.playerAttackFrames[attackFrame];
+            if (nextFrame != null) spriteRenderer.sprite = nextFrame;
+        }
+    }
+
+    void RestoreMovementSprite()
+    {
+        if (spriteRenderer == null) return;
+        if (movement.sqrMagnitude > 0.01f && currentWalkFrames != null && currentWalkFrames.Length > 0)
+        {
+            int index = Mathf.Clamp(walkFrame, 0, currentWalkFrames.Length - 1);
+            if (currentWalkFrames[index] != null) spriteRenderer.sprite = currentWalkFrames[index];
+        }
+        else if (idleSprite != null)
+        {
+            spriteRenderer.sprite = idleSprite;
+        }
     }
 
     void OnDrawGizmosSelected()
