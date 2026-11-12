@@ -27,6 +27,8 @@ public class DungeonTaleGame : MonoBehaviour
     private Sprite uiWhiteSprite;
     private Transform player;
     private bool finished, hasKey;
+    private int dungeonLevel = 1;
+    private GameObject nextDungeonPortal;
     private float invulnerableUntil;
 
     void Start() {
@@ -159,7 +161,75 @@ public class DungeonTaleGame : MonoBehaviour
     }
     public void ShowMessage(string s){if(message)message.text=s;}
     public void DamagePlayer(){if(finished||Time.time<invulnerableUntil)return;invulnerableUntil=Time.time+0.8f;playerHealth--;UpdateHud();if(playerHealth<=0){finished=true;ShowMessage("YOU WERE DEFEATED - Press R to restart");}}
-    public void EnemyDefeated(){enemiesRemaining=Mathf.Max(0,enemiesRemaining-1);UpdateHud();if(enemiesRemaining==0)ShowMessage(hasKey?"All monsters defeated! Reach the exit.":"All monsters defeated! Find the key and reach the exit.");}
+    public void EnemyDefeated()
+    {
+        enemiesRemaining = Mathf.Max(0, enemiesRemaining - 1);
+        UpdateHud();
+        if (enemiesRemaining == 0)
+        {
+            ShowMessage("DUNGEON CLEARED! A portal to the next dungeon has appeared!");
+            SpawnNextDungeonPortal();
+        }
+    }
+
+    void SpawnNextDungeonPortal()
+    {
+        if (nextDungeonPortal != null) return;
+        nextDungeonPortal = new GameObject("Next Dungeon Portal");
+        nextDungeonPortal.transform.position = Vector3.zero;
+        nextDungeonPortal.transform.localScale = Vector3.one * 1.8f;
+        var sr = nextDungeonPortal.AddComponent<SpriteRenderer>();
+        sr.sprite = doorSprite != null ? doorSprite : heroSprite;
+        sr.color = new Color(0.72f, 0.3f, 1f, 1f);
+        sr.sortingOrder = 15;
+        var trigger = nextDungeonPortal.AddComponent<CircleCollider2D>();
+        trigger.isTrigger = true;
+        var portal = nextDungeonPortal.AddComponent<DungeonPortal>();
+        portal.game = this;
+    }
+
+    public void EnterNextDungeon()
+    {
+        if (finished || enemiesRemaining > 0) return;
+
+        dungeonLevel++;
+        if (nextDungeonPortal != null) Destroy(nextDungeonPortal);
+        nextDungeonPortal = null;
+
+        foreach (var oldEnemy in FindObjectsOfType<DungeonEnemy>())
+            Destroy(oldEnemy.gameObject);
+        foreach (var oldExit in FindObjectsOfType<DungeonExit>())
+            Destroy(oldExit.gameObject);
+
+        // Keep player health, coins and potions, but create a new room layout.
+        if (player != null) player.position = new Vector3(-14, 0, 0);
+        if (wallMap != null && wallTile != null)
+        {
+            wallMap.ClearAllTiles();
+            int dividerX = dungeonLevel % 2 == 0 ? -4 : 5;
+            for (int y = -7; y <= 7; y++)
+            {
+                if (y == (dungeonLevel % 2 == 0 ? 1 : -2)) continue;
+                wallMap.SetTile(new Vector3Int(dividerX, y, 0), wallTile);
+            }
+            wallMap.RefreshAllTiles();
+        }
+
+        int bonus = dungeonLevel - 1;
+        SpawnEnemy(slimeSprite, new Vector2(-8, 7), 1.7f + bonus * 0.12f, 2 + bonus);
+        SpawnEnemy(slimeSprite, new Vector2(7, 7), 1.7f + bonus * 0.12f, 2 + bonus);
+        SpawnEnemy(skeletonSprite, new Vector2(10, 2), 1.25f + bonus * 0.1f, 3 + bonus);
+        SpawnEnemy(skeletonSprite, new Vector2(7, -7), 1.25f + bonus * 0.1f, 3 + bonus);
+        SpawnEnemy(batSprite, new Vector2(-8, -7), 2.1f + bonus * 0.15f, 1 + bonus);
+        SpawnEnemy(batSprite, new Vector2(12, -3), 2.1f + bonus * 0.15f, 1 + bonus);
+        SpawnEnemy(ratSprite, new Vector2(-12, 5), 2.4f + bonus * 0.15f, 1 + bonus);
+        SpawnEnemy(ratSprite, new Vector2(4, 9), 2.4f + bonus * 0.15f, 1 + bonus);
+        enemiesRemaining = 8;
+        hasKey = false;
+        CreateExit();
+        ShowMessage("DUNGEON " + dungeonLevel + " - Stronger monsters await!");
+        UpdateHud();
+    }
     public void CollectCoin(){coins++;UpdateHud();}
     public void CollectItem(string item){if(item=="Dungeon Key"){hasKey=true;ShowMessage("Dungeon key collected! The exit is unlocked.");}else if(item.Contains("Potion")){potions++;ShowMessage("Potion collected. Press E to restore health.");}UpdateHud();}
     public void UsePotion(){if(potions<=0||playerHealth>=maxHealth)return;potions--;playerHealth=Mathf.Min(maxHealth,playerHealth+3);UpdateHud();ShowMessage("Potion used. Health restored.");}
