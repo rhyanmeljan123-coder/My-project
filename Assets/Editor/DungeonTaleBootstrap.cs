@@ -52,6 +52,7 @@ public static class DungeonTaleBootstrap
         game.walkRightFrames = FindSpriteSequence("Player_", 12, 6);
         game.walkUpFrames = FindSpriteSequence("Player_", 18, 6);
         game.heroWalkFrames = game.walkDownFrames;
+        game.playerAttackFrames = FindSpriteSequence("Player_", 36, 18);
         game.slimeSprite = FindSprite("Char_Slime");
         game.skeletonSprite = FindSprite("Char_Skeletone");
         game.batSprite = FindSprite("Char_Bat");
