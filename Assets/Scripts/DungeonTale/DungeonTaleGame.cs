@@ -19,6 +19,8 @@ public class DungeonTaleGame : MonoBehaviour
     public Sprite[] walkDownFrames, walkLeftFrames, walkRightFrames, walkUpFrames;
     public Sprite[] attackDownFrames, attackLeftFrames, attackRightFrames, attackUpFrames;
     public Sprite slimeSprite, skeletonSprite, batSprite, ratSprite, coinSprite, torchSprite, spikeSprite, doorSprite;
+    [Header("2D Pixel Dungeon Pack")]
+    public Sprite packChestSprite, packTorchSprite, packSpikeSprite, packCoinSprite, packFlaskSprite;
     public Sprite potionRed, potionBlue, potionGreen, keySprite, swordSprite, shieldSprite, skullSprite, vaseSprite, chainSprite, boneSprite, carpetSprite;
     [Header("Player stats")]
     public int playerHealth = 6, maxHealth = 6, coins, potions;
@@ -48,13 +50,16 @@ public class DungeonTaleGame : MonoBehaviour
         var cam=Camera.main; if(cam){ cam.orthographic=true; cam.orthographicSize=8.5f; cam.transform.position=new Vector3(-14,0,-10); var follow=cam.GetComponent<DungeonCameraFollow>(); if(!follow)follow=cam.gameObject.AddComponent<DungeonCameraFollow>(); follow.target=player; }
     }
     void DecorateDungeon() {
-        Place(torchSprite,new Vector2(-15,10),1.2f,8); Place(torchSprite,new Vector2(15,10),1.2f,8);
-        Place(torchSprite,new Vector2(-15,-10),1.2f,8); Place(torchSprite,new Vector2(15,-10),1.2f,8);
+        Place(packTorchSprite ? packTorchSprite : torchSprite,new Vector2(-15,10),1.2f,8); Place(packTorchSprite ? packTorchSprite : torchSprite,new Vector2(15,10),1.2f,8);
+        Place(packTorchSprite ? packTorchSprite : torchSprite,new Vector2(-15,-10),1.2f,8); Place(packTorchSprite ? packTorchSprite : torchSprite,new Vector2(15,-10),1.2f,8);
         Place(carpetSprite,new Vector2(0,0),3.5f,1);
         Place(skullSprite,new Vector2(-10,8),1,4); Place(skullSprite,new Vector2(10,-8),1,4);
         Place(vaseSprite,new Vector2(-12,-7),1,5); Place(vaseSprite,new Vector2(12,7),1,5);
         Place(chainSprite,new Vector2(-3,10),1.2f,5); Place(chainSprite,new Vector2(3,-10),1.2f,5);
         Place(boneSprite,new Vector2(7,9),.8f,4); Place(boneSprite,new Vector2(-8,-9),.8f,4);
+        // New pack treasure props: chests mark reward corners in every floor.
+        Place(packChestSprite,new Vector2(-13,8),1.25f,6);
+        Place(packChestSprite,new Vector2(13,-8),1.25f,6);
     }
     void Place(Sprite s, Vector2 p, float scale, int order) { if(!s)return; var g=new GameObject("Dungeon Decoration");dungeonObjects.Add(g);g.transform.position=p;g.transform.localScale=Vector3.one*scale;var r=g.AddComponent<SpriteRenderer>();r.sprite=s;r.sortingOrder=order; }
     void CreateEnemies() {
@@ -75,7 +80,7 @@ public class DungeonTaleGame : MonoBehaviour
     }
     void CreatePickups() {
         Vector2[] coinsAt={new(-11,5),new(-5,9),new(5,9),new(12,5),new(-11,-5),new(-4,-9),new(4,-9),new(12,-5)};
-        foreach(var p in coinsAt) { var c=MakePickup("Gold Coin",coinSprite,p,.85f);c.AddComponent<CircleCollider2D>().isTrigger=true;c.AddComponent<DungeonCoin>().game=this; }
+        foreach(var p in coinsAt) { var c=MakePickup("Gold Coin",packCoinSprite ? packCoinSprite : coinSprite,p,.85f);c.AddComponent<CircleCollider2D>().isTrigger=true;c.AddComponent<DungeonCoin>().game=this; }
         MakeItem("Red Potion",potionRed,new Vector2(-3,6),1);
         MakeItem("Blue Potion",potionBlue,new Vector2(5,5),1);
         MakeItem("Green Potion",potionGreen,new Vector2(9,-5),1);
@@ -87,7 +92,7 @@ public class DungeonTaleGame : MonoBehaviour
     void MakeItem(string n,Sprite s,Vector2 p,float size){if(!s)return;var g=MakePickup(n,s,p,size);g.AddComponent<CircleCollider2D>().isTrigger=true;g.AddComponent<DungeonItemPickup>().game=this;}
     void CreateTraps() {
         Vector2[] positions={new(-6,2),new(-6,3),new(6,-2),new(6,-3),new(11,0),new(-11,0)};
-        foreach(var p in positions){if(!spikeSprite)continue;var g=MakePickup("Spike Trap",spikeSprite,p,.9f);g.AddComponent<BoxCollider2D>().isTrigger=true;g.AddComponent<DungeonSpike>().game=this;}
+        foreach(var p in positions){Sprite trapArt = packSpikeSprite ? packSpikeSprite : spikeSprite;if(!trapArt)continue;var g=MakePickup("Spike Trap",trapArt,p,.9f);g.AddComponent<BoxCollider2D>().isTrigger=true;g.AddComponent<DungeonSpike>().game=this;}
     }
     void CreateExit(){var g=MakePickup("Dungeon Exit",doorSprite,new Vector2(15,0),1.8f);g.AddComponent<BoxCollider2D>().isTrigger=true;g.AddComponent<DungeonExit>().game=this;}
     void CreateUI() {
