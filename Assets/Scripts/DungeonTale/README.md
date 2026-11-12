@@ -1,26 +1,31 @@
-# Dungeon Tale - First Playable Build
+# Dungeon Tale - Playable Dungeon Adventure
 
-This is a separate Unity 2D game inside the **My-project** repository. It does not use or modify the separate **2d game** project.
+This is a separate Unity 2D game inside **My-project**. It does not touch the separate **2d game** project.
 
 ## Build the scene
-1. Open this repository's Unity project in Unity.
-2. Wait for scripts and the Dungeon Tale tileset to import.
-3. From the Unity menu, choose **Dungeon Tale > Build Playable Dungeon Scene**.
-4. Open `Assets/Scenes/DungeonTale.unity` if it is not already open.
-5. Press **Play**.
+1. Open this Unity project and allow all assets to import.
+2. Choose **Dungeon Tale > Build Playable Dungeon Scene**.
+3. Open `Assets/Scenes/DungeonTale.unity`.
+4. The tilemap and room decorations are saved in the Scene view; press Play to start.
 
-The editor command creates a playable dungeon scene and adds it to Build Settings. It uses the Floor Dirt, Wall, and Hero assets from `Assets/Tileset/Dungeon Tale`.
+The builder uses the original Dungeon Tale atlas, Rule Tiles, and floor variants in `Assets/Tileset/Dungeon Tale/Assets`.
 
 ## Controls
-- **WASD / Arrow keys** - Move
-- **Space** - Attack nearby slimes
-- **R** - Restart after winning or losing
+- WASD / Arrow keys: move
+- Space: melee attack
+- E: use a collected potion
+- R: restart after victory or defeat
 
-## First playable features
-- Tilemap dungeon with walls, pillars, and a central divider
-- Player movement and camera follow
-- Four slimes that chase and damage the player
-- Two-hit melee combat
-- Collectible gold coins
-- Health and gameplay HUD
-- Exit that unlocks after all enemies are defeated
+## Current gameplay
+- Dungeon map with floor variations, walls, divider, pillars, carpet and environmental props
+- Hero movement, wall collision and camera follow
+- Slimes, skeletons, bats and rats with different health and movement speeds
+- Melee combat and enemy defeat counter
+- Coins, red/blue/green potion pickups, key, sword and shield relics
+- Potion inventory and healing
+- Spike traps that damage the hero
+- Locked exit; defeat all monsters, collect the key, then reach the exit
+- HUD for health, gold, potions and remaining monsters
+
+## Note
+Unity Editor compilation and Play Mode testing must still be completed locally after pulling the branch. The GitHub changes have not been validated by running the Unity Editor in this environment.
