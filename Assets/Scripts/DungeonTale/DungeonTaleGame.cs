@@ -3,12 +3,15 @@ using UnityEngine.Tilemaps;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 public class DungeonTaleGame : MonoBehaviour
 {
     [Header("Map")]
     public Tilemap floorMap, wallMap;
     public TileBase floorTile, wallTile;
+    public TileBase floorFlashTile, floorGreenTile, floorMetalTile, floorRedTile, floorWoodTile;
+    private readonly List<GameObject> dungeonObjects = new List<GameObject>();
     [Header("Atlas sprites")]
     public Sprite heroSprite;
     public Sprite playerIdleSprite;
@@ -53,7 +56,7 @@ public class DungeonTaleGame : MonoBehaviour
         Place(chainSprite,new Vector2(-3,10),1.2f,5); Place(chainSprite,new Vector2(3,-10),1.2f,5);
         Place(boneSprite,new Vector2(7,9),.8f,4); Place(boneSprite,new Vector2(-8,-9),.8f,4);
     }
-    void Place(Sprite s, Vector2 p, float scale, int order) { if(!s)return; var g=new GameObject("Dungeon Decoration");g.transform.position=p;g.transform.localScale=Vector3.one*scale;var r=g.AddComponent<SpriteRenderer>();r.sprite=s;r.sortingOrder=order; }
+    void Place(Sprite s, Vector2 p, float scale, int order) { if(!s)return; var g=new GameObject("Dungeon Decoration");dungeonObjects.Add(g);g.transform.position=p;g.transform.localScale=Vector3.one*scale;var r=g.AddComponent<SpriteRenderer>();r.sprite=s;r.sortingOrder=order; }
     void CreateEnemies() {
         SpawnEnemy(slimeSprite,new Vector2(-8,7),1.7f,2);
         SpawnEnemy(slimeSprite,new Vector2(7,7),1.7f,2);
@@ -65,7 +68,7 @@ public class DungeonTaleGame : MonoBehaviour
         SpawnEnemy(ratSprite,new Vector2(4,9),2.4f,1);
     }
     void SpawnEnemy(Sprite sprite, Vector2 pos, float speed, int hp) {
-        var e=new GameObject("Dungeon Monster");e.transform.position=pos;
+        var e=new GameObject("Dungeon Monster");dungeonObjects.Add(e);e.transform.position=pos;
         var sr=e.AddComponent<SpriteRenderer>();sr.sprite=sprite? sprite:slimeSprite;sr.sortingOrder=9;
         e.AddComponent<CircleCollider2D>().isTrigger=true;
         var brain=e.AddComponent<DungeonEnemy>();brain.game=this;brain.target=player;brain.speed=speed;brain.SetHealth(hp);
@@ -80,7 +83,7 @@ public class DungeonTaleGame : MonoBehaviour
         MakeItem("Sword Relic",swordSprite,new Vector2(-13,-2),.9f);
         MakeItem("Shield Relic",shieldSprite,new Vector2(13,2),.9f);
     }
-    GameObject MakePickup(string n,Sprite s,Vector2 p,float size){var g=new GameObject(n);g.transform.position=p;g.transform.localScale=Vector3.one*size;var r=g.AddComponent<SpriteRenderer>();r.sprite=s;r.sortingOrder=7;return g;}
+    GameObject MakePickup(string n,Sprite s,Vector2 p,float size){var g=new GameObject(n);dungeonObjects.Add(g);g.transform.position=p;g.transform.localScale=Vector3.one*size;var r=g.AddComponent<SpriteRenderer>();r.sprite=s;r.sortingOrder=7;return g;}
     void MakeItem(string n,Sprite s,Vector2 p,float size){if(!s)return;var g=MakePickup(n,s,p,size);g.AddComponent<CircleCollider2D>().isTrigger=true;g.AddComponent<DungeonItemPickup>().game=this;}
     void CreateTraps() {
         Vector2[] positions={new(-6,2),new(-6,3),new(6,-2),new(6,-3),new(11,0),new(-11,0)};
@@ -196,40 +199,140 @@ public class DungeonTaleGame : MonoBehaviour
         if (nextDungeonPortal != null) Destroy(nextDungeonPortal);
         nextDungeonPortal = null;
 
-        foreach (var oldEnemy in FindObjectsOfType<DungeonEnemy>())
-            Destroy(oldEnemy.gameObject);
-        foreach (var oldExit in FindObjectsOfType<DungeonExit>())
-            Destroy(oldExit.gameObject);
+        // Remove every object belonging to the previous room, but keep the
+        // player, camera and HUD so health, coins and potions carry over.
+        foreach (var oldObject in dungeonObjects)
+            if (oldObject != null) Destroy(oldObject);
+        dungeonObjects.Clear();
 
-        // Keep player health, coins and potions, but create a new room layout.
         if (player != null) player.position = new Vector3(-14, 0, 0);
-        if (wallMap != null && wallTile != null)
-        {
-            wallMap.ClearAllTiles();
-            int dividerX = dungeonLevel % 2 == 0 ? -4 : 5;
-            for (int y = -7; y <= 7; y++)
-            {
-                if (y == (dungeonLevel % 2 == 0 ? 1 : -2)) continue;
-                wallMap.SetTile(new Vector3Int(dividerX, y, 0), wallTile);
-            }
-            wallMap.RefreshAllTiles();
-        }
-
-        int bonus = dungeonLevel - 1;
-        SpawnEnemy(slimeSprite, new Vector2(-8, 7), 1.7f + bonus * 0.12f, 2 + bonus);
-        SpawnEnemy(slimeSprite, new Vector2(7, 7), 1.7f + bonus * 0.12f, 2 + bonus);
-        SpawnEnemy(skeletonSprite, new Vector2(10, 2), 1.25f + bonus * 0.1f, 3 + bonus);
-        SpawnEnemy(skeletonSprite, new Vector2(7, -7), 1.25f + bonus * 0.1f, 3 + bonus);
-        SpawnEnemy(batSprite, new Vector2(-8, -7), 2.1f + bonus * 0.15f, 1 + bonus);
-        SpawnEnemy(batSprite, new Vector2(12, -3), 2.1f + bonus * 0.15f, 1 + bonus);
-        SpawnEnemy(ratSprite, new Vector2(-12, 5), 2.4f + bonus * 0.15f, 1 + bonus);
-        SpawnEnemy(ratSprite, new Vector2(4, 9), 2.4f + bonus * 0.15f, 1 + bonus);
-        enemiesRemaining = 8;
         hasKey = false;
+
+        BuildNextDungeonLayout();
+        DecorateDungeon();
+        CreateLevelEnemies();
+        CreatePickups();
+        CreateTraps();
         CreateExit();
-        ShowMessage("DUNGEON " + dungeonLevel + " - Stronger monsters await!");
+
+        ShowMessage("DUNGEON " + dungeonLevel + " - " + GetDungeonName() + "!");
         UpdateHud();
     }
+
+    string GetDungeonName()
+    {
+        switch ((dungeonLevel - 2) % 5)
+        {
+            case 0: return "FORGOTTEN RUINS";
+            case 1: return "INFERNAL CAVERN";
+            case 2: return "IRON CRYPT";
+            case 3: return "SUNDERED HALLS";
+            default: return "CRYSTAL CATACOMBS";
+        }
+    }
+
+    void BuildNextDungeonLayout()
+    {
+        if (floorMap == null || wallMap == null || wallTile == null) return;
+
+        TileBase themeFloor;
+        switch ((dungeonLevel - 2) % 5)
+        {
+            case 0: themeFloor = floorGreenTile ? floorGreenTile : floorTile; break;
+            case 1: themeFloor = floorRedTile ? floorRedTile : floorTile; break;
+            case 2: themeFloor = floorMetalTile ? floorMetalTile : floorTile; break;
+            case 3: themeFloor = floorWoodTile ? floorWoodTile : floorTile; break;
+            default: themeFloor = floorFlashTile ? floorFlashTile : floorTile; break;
+        }
+
+        floorMap.ClearAllTiles();
+        wallMap.ClearAllTiles();
+        for (int x = -17; x <= 17; x++)
+        for (int y = -12; y <= 12; y++)
+        {
+            floorMap.SetTile(new Vector3Int(x, y, 0), themeFloor);
+            if (x == -17 || x == 17 || y == -12 || y == 12)
+                wallMap.SetTile(new Vector3Int(x, y, 0), wallTile);
+        }
+
+        // Each theme gets a different walkable floor plan. Keep the center
+        // lane open so the player can reach every section of the room.
+        int pattern = (dungeonLevel - 2) % 5;
+        if (pattern == 0) // Overgrown ruins: broken side chambers
+        {
+            AddWallLine(-8, -8, -8, 4, -2);
+            AddWallLine(8, -4, 8, 8, 2);
+            AddWallLine(-4, 7, 4, 7, 0);
+            AddWallLine(-4, -7, 4, -7, 0);
+        }
+        else if (pattern == 1) // Lava cavern: staggered rock bridges
+        {
+            AddWallLine(-12, -5, -5, -5, -9);
+            AddWallLine(1, 5, 12, 5, 7);
+            AddWallLine(-7, 1, -7, 8, 4);
+            AddWallLine(7, -8, 7, -1, -4);
+        }
+        else if (pattern == 2) // Iron crypt: central cross and side vaults
+        {
+            AddWallLine(-10, 0, -3, 0, -7);
+            AddWallLine(3, 0, 10, 0, 7);
+            AddWallLine(0, -9, 0, -3, -6);
+            AddWallLine(0, 3, 0, 9, 6);
+        }
+        else if (pattern == 3) // Sundered halls: alternating long corridors
+        {
+            AddWallLine(-13, -7, -3, -7, -8);
+            AddWallLine(3, 7, 13, 7, 8);
+            AddWallLine(-10, 1, -2, 1, -6);
+            AddWallLine(2, -1, 10, -1, 6);
+        }
+        else // Crystal catacombs: separated chambers and narrow openings
+        {
+            AddWallLine(-11, -8, -11, 5, 1);
+            AddWallLine(11, -5, 11, 8, -1);
+            AddWallLine(-7, 8, -2, 8, -5);
+            AddWallLine(2, -8, 7, -8, 5);
+        }
+
+        floorMap.RefreshAllTiles();
+        wallMap.RefreshAllTiles();
+    }
+
+    void AddWallLine(int x1, int y1, int x2, int y2, int gap)
+    {
+        int dx = x2 == x1 ? 0 : (x2 > x1 ? 1 : -1);
+        int dy = y2 == y1 ? 0 : (y2 > y1 ? 1 : -1);
+        int x = x1, y = y1, index = 0;
+        while (true)
+        {
+            if (index != gap && !(x == -14 && y == 0))
+                wallMap.SetTile(new Vector3Int(x, y, 0), wallTile);
+            if (x == x2 && y == y2) break;
+            x += dx; y += dy; index++;
+        }
+    }
+
+    void CreateLevelEnemies()
+    {
+        Vector2[] positions = {
+            new Vector2(-12, 7), new Vector2(-7, 9), new Vector2(-2, 8),
+            new Vector2(6, 9), new Vector2(12, 6), new Vector2(12, -6),
+            new Vector2(6, -9), new Vector2(-2, -8), new Vector2(-8, -8),
+            new Vector2(-13, -4), new Vector2(2, 3), new Vector2(10, 2)
+        };
+        int count = Mathf.Min(positions.Length, 8 + (dungeonLevel - 1) * 2);
+        for (int i = 0; i < count; i++)
+        {
+            Sprite type = i % 4 == 0 ? skeletonSprite :
+                          i % 4 == 1 ? slimeSprite :
+                          i % 4 == 2 ? batSprite : ratSprite;
+            float speed = (type == batSprite ? 2.1f : type == ratSprite ? 2.4f :
+                           type == skeletonSprite ? 1.25f : 1.7f) + (dungeonLevel - 1) * 0.08f;
+            SpawnEnemy(type, positions[i], speed, (type == skeletonSprite ? 3 : 2) + dungeonLevel - 1);
+        }
+        enemiesRemaining = count;
+    }
+
     public void CollectCoin(){coins++;UpdateHud();}
     public void CollectItem(string item){if(item=="Dungeon Key"){hasKey=true;ShowMessage("Dungeon key collected! The exit is unlocked.");}else if(item.Contains("Potion")){potions++;ShowMessage("Potion collected. Press E to restore health.");}UpdateHud();}
     public void UsePotion(){if(potions<=0||playerHealth>=maxHealth)return;potions--;playerHealth=Mathf.Min(maxHealth,playerHealth+3);UpdateHud();ShowMessage("Potion used. Health restored.");}
