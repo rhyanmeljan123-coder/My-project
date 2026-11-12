@@ -52,11 +52,14 @@ public static class DungeonTaleBootstrap
         game.walkRightFrames = FindSpriteSequence("Player_", 6, 6);
         game.walkUpFrames = FindSpriteSequence("Player_", 12, 6);
         game.heroWalkFrames = game.walkDownFrames;
-        // The imported sheet stores four separate directional sword-swing rows.
+        // Verified against the Sprite Editor preview: 41-44 is the horizontal
+        // right-facing swing, 45-49 is the upward swing, and 36-40 is downward.
+        // The controller mirrors the horizontal swing for left (A), avoiding
+        // the unrelated/swimming frames Player_50-Player_53.
         game.attackDownFrames = FindSpriteSequence("Player_", 36, 5);
-        game.attackLeftFrames = FindSpriteSequence("Player_", 30, 6);
-        game.attackRightFrames = FindSpriteSequence("Player_", 45, 5);
-        game.attackUpFrames = FindSpriteSequence("Player_", 41, 4); // Excludes the swimming frames Player_50-Player_53.
+        game.attackLeftFrames = FindSpriteSequence("Player_", 41, 4);
+        game.attackRightFrames = FindSpriteSequence("Player_", 41, 4);
+        game.attackUpFrames = FindSpriteSequence("Player_", 45, 5);
         game.slimeSprite = FindSprite("Char_Slime");
         game.skeletonSprite = FindSprite("Char_Skeletone");
         game.batSprite = FindSprite("Char_Bat");
