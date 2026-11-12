@@ -56,7 +56,7 @@ public static class DungeonTaleBootstrap
         game.attackDownFrames = FindSpriteSequence("Player_", 36, 5);
         game.attackLeftFrames = FindSpriteSequence("Player_", 41, 4);
         game.attackRightFrames = FindSpriteSequence("Player_", 45, 5);
-        game.attackUpFrames = new Sprite[0]; // No upward swing animation; frames 50-53 are swimming.
+        game.attackUpFrames = FindSpriteSequence("Player_", 45, 5); // Reuse a valid sword-swing sequence; frames 50-53 are swimming.
         game.slimeSprite = FindSprite("Char_Slime");
         game.skeletonSprite = FindSprite("Char_Skeletone");
         game.batSprite = FindSprite("Char_Bat");
