@@ -48,9 +48,9 @@ public static class DungeonTaleBootstrap
         game.playerIdleSprite = FindSprite("Player_0");
         game.heroSprite = game.playerIdleSprite ? game.playerIdleSprite : (FindSprite("Hero_0") ? FindSprite("Hero_0") : hero);
         game.walkDownFrames = FindSpriteSequence("Player_", 0, 6);
-        game.walkLeftFrames = FindSpriteSequence("Player_", 6, 6);
-        game.walkRightFrames = FindSpriteSequence("Player_", 12, 6);
-        game.walkUpFrames = FindSpriteSequence("Player_", 18, 6);
+        game.walkLeftFrames = FindSpriteSequence("Player_", 18, 6);
+        game.walkRightFrames = FindSpriteSequence("Player_", 6, 6);
+        game.walkUpFrames = FindSpriteSequence("Player_", 12, 6);
         game.heroWalkFrames = game.walkDownFrames;
         // The imported sheet stores four separate directional sword-swing rows.
         game.attackDownFrames = FindSpriteSequence("Player_", 36, 5);
