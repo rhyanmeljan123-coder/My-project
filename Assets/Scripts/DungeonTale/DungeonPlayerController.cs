@@ -24,6 +24,7 @@ public class DungeonPlayerController : MonoBehaviour
     private float attackFrameTimer;
     private Sprite[] currentAttackFrames = new Sprite[0];
     private Sprite[] currentWalkFrames = new Sprite[0];
+    private bool attackFlipX;
     private Vector2 facingDirection = Vector2.right;
 
     void Awake()
@@ -105,9 +106,17 @@ public class DungeonPlayerController : MonoBehaviour
 
         // Each direction has its own short swing sequence on the imported sheet.
         if (Mathf.Abs(facingDirection.x) > Mathf.Abs(facingDirection.y))
-            currentAttackFrames = facingDirection.x < 0 ? game.attackLeftFrames : game.attackRightFrames;
+        {
+            // The sheet contains a right-facing horizontal swing. Mirror it for A/left.
+            currentAttackFrames = game.attackRightFrames;
+            attackFlipX = facingDirection.x < 0;
+        }
         else
+        {
+            attackFlipX = false;
             currentAttackFrames = facingDirection.y > 0 ? game.attackUpFrames : game.attackDownFrames;
+        }
+        spriteRenderer.flipX = attackFlipX;
 
         bool hasSwingAnimation = currentAttackFrames != null && currentAttackFrames.Length > 0;
         if (hasSwingAnimation)
@@ -180,6 +189,7 @@ public class DungeonPlayerController : MonoBehaviour
     void RestoreMovementSprite()
     {
         if (spriteRenderer == null) return;
+        spriteRenderer.flipX = false;
         if (movement.sqrMagnitude > 0.01f && currentWalkFrames != null && currentWalkFrames.Length > 0)
         {
             int index = Mathf.Clamp(walkFrame, 0, currentWalkFrames.Length - 1);
