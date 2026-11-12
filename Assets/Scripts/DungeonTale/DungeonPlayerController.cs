@@ -9,6 +9,7 @@ public class DungeonPlayerController : MonoBehaviour
     public float attackRange = 1.35f;
     public float attackCooldown = 0.35f;
     public float walkFramesPerSecond = 9f;
+    public float swordSwingDuration = 0.22f;
 
     private Rigidbody2D body;
     private SpriteRenderer spriteRenderer;
@@ -18,6 +19,9 @@ public class DungeonPlayerController : MonoBehaviour
     private int walkFrame;
     private Sprite idleSprite;
     private Sprite[] walkSprites = new Sprite[0];
+    private SpriteRenderer swordRenderer;
+    private float swingTimer;
+    private Vector2 facingDirection = Vector2.right;
 
     void Awake()
     {
@@ -39,6 +43,7 @@ public class DungeonPlayerController : MonoBehaviour
         if (walkSprites == null || walkSprites.Length == 0)
             walkSprites = gameObject.GetComponent<DungeonTaleGame>()?.heroWalkFrames;
         if (spriteRenderer != null && idleSprite != null) spriteRenderer.sprite = idleSprite;
+        CreateSwordVisual();
     }
 
     void Update()
@@ -51,7 +56,9 @@ public class DungeonPlayerController : MonoBehaviour
         }
 
         movement = ReadMovement();
+        if (movement.sqrMagnitude > 0.01f) facingDirection = movement.normalized;
         Animate(movement.sqrMagnitude > 0.01f);
+        UpdateSwordSwing();
 
         Keyboard keyboard = Keyboard.current;
         if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame && Time.time >= nextAttack)
@@ -105,12 +112,44 @@ public class DungeonPlayerController : MonoBehaviour
 
     void Attack()
     {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, attackRange);
+        swingTimer = swordSwingDuration;
+        Collider2D[] hits = Physics2D.OverlapCircleAll((Vector2)transform.position + facingDirection * 0.65f, attackRange);
         foreach (Collider2D hit in hits)
         {
             DungeonEnemy enemy = hit.GetComponent<DungeonEnemy>();
             if (enemy != null) enemy.TakeHit();
         }
+    }
+
+
+    void CreateSwordVisual()
+    {
+        if (game == null || game.swordSprite == null) return;
+        var sword = new GameObject("Sword Swing Visual");
+        sword.transform.SetParent(transform, false);
+        sword.transform.localScale = Vector3.one * 0.85f;
+        swordRenderer = sword.AddComponent<SpriteRenderer>();
+        swordRenderer.sprite = game.swordSprite;
+        swordRenderer.sortingOrder = 15;
+        swordRenderer.enabled = false;
+    }
+
+    void UpdateSwordSwing()
+    {
+        if (swordRenderer == null) return;
+        if (swingTimer <= 0f)
+        {
+            swordRenderer.enabled = false;
+            return;
+        }
+
+        swingTimer -= Time.deltaTime;
+        float progress = 1f - Mathf.Clamp01(swingTimer / Mathf.Max(0.01f, swordSwingDuration));
+        float facingAngle = Mathf.Atan2(facingDirection.y, facingDirection.x) * Mathf.Rad2Deg;
+        float arcAngle = Mathf.Lerp(-115f, 115f, progress);
+        swordRenderer.enabled = true;
+        swordRenderer.transform.localPosition = (Vector3)(facingDirection * 0.72f);
+        swordRenderer.transform.localRotation = Quaternion.Euler(0f, 0f, facingAngle + arcAngle - 90f);
     }
 
     void OnDrawGizmosSelected()
