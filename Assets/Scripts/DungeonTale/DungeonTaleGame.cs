@@ -6,206 +6,97 @@ using UnityEngine.InputSystem;
 
 public class DungeonTaleGame : MonoBehaviour
 {
-    [Header("Dungeon assets")]
-    public Tilemap floorMap;
-    public Tilemap wallMap;
-    public TileBase floorTile;
-    public TileBase wallTile;
-    public Sprite heroSprite;
-
-    [Header("Gameplay")]
-    public int playerHealth = 5;
-    public int coins;
-    public int enemiesRemaining = 4;
-
-    private Text hud;
-    private Text message;
+    [Header("Map")]
+    public Tilemap floorMap, wallMap;
+    public TileBase floorTile, wallTile;
+    [Header("Atlas sprites")]
+    public Sprite heroSprite, slimeSprite, skeletonSprite, batSprite, ratSprite, coinSprite, torchSprite, spikeSprite, doorSprite;
+    public Sprite potionRed, potionBlue, potionGreen, keySprite, swordSprite, shieldSprite, skullSprite, vaseSprite, chainSprite, boneSprite, carpetSprite;
+    [Header("Player stats")]
+    public int playerHealth = 6, maxHealth = 6, coins, potions;
+    public int enemiesRemaining = 8;
+    private Text hud, message;
     private Transform player;
-    private bool finished;
+    private bool finished, hasKey;
+    private float invulnerableUntil;
 
-    void Start()
-    {
-        BuildDungeon();
-        CreatePlayer();
-        CreateEnemies();
-        CreatePickups();
-        CreateExit();
-        CreateUI();
-        UpdateHud();
+    void Start() {
+        CreatePlayer(); DecorateDungeon(); CreateEnemies(); CreatePickups(); CreateTraps(); CreateExit(); CreateUI(); UpdateHud();
     }
-
-    void BuildDungeon()
-    {
-        floorMap.ClearAllTiles();
-        wallMap.ClearAllTiles();
-        const int width = 31, height = 21;
-        for (int x = -width / 2; x <= width / 2; x++)
-        for (int y = -height / 2; y <= height / 2; y++)
-        {
-            floorMap.SetTile(new Vector3Int(x, y, 0), floorTile);
-            bool border = x == -width / 2 || x == width / 2 || y == -height / 2 || y == height / 2;
-            bool pillar = (x == -5 || x == 5) && (y == -4 || y == 4);
-            bool divider = x == 0 && y >= -5 && y <= 5 && y != 0;
-            if (border || pillar || divider)
-                wallMap.SetTile(new Vector3Int(x, y, 0), wallTile);
-        }
-        floorMap.RefreshAllTiles();
-        wallMap.RefreshAllTiles();
-    }
-
-    void CreatePlayer()
-    {
-        GameObject go = new GameObject("Dungeon Hero");
-        go.transform.position = new Vector3(-12, 0, 0);
-        var sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = heroSprite;
-        sr.sortingOrder = 5;
-        if (sr.sprite == null) sr.color = new Color(0.25f, 0.85f, 1f);
-        var body = go.AddComponent<Rigidbody2D>();
-        body.gravityScale = 0;
-        body.freezeRotation = true;
-        body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+    void CreatePlayer() {
+        var go = new GameObject("Player - Hero");
+        go.transform.position = new Vector3(-14,0,0);
+        var sr=go.AddComponent<SpriteRenderer>(); sr.sprite=heroSprite; sr.sortingOrder=10;
+        var rb=go.AddComponent<Rigidbody2D>(); rb.gravityScale=0; rb.freezeRotation=true; rb.interpolation=RigidbodyInterpolation2D.Interpolate;
         go.AddComponent<CapsuleCollider2D>();
-        var controller = go.AddComponent<DungeonPlayerController>();
-        controller.game = this;
-        player = go.transform;
-        Camera.main.transform.position = new Vector3(-12, 0, -10);
-        Camera.main.orthographic = true;
-        Camera.main.orthographicSize = 8.5f;
-        var follow = Camera.main.gameObject.AddComponent<DungeonCameraFollow>();
-        follow.target = player;
+        var controller=go.AddComponent<DungeonPlayerController>(); controller.game=this;
+        player=go.transform;
+        var cam=Camera.main; if(cam){ cam.orthographic=true; cam.orthographicSize=8.5f; cam.transform.position=new Vector3(-14,0,-10); var follow=cam.GetComponent<DungeonCameraFollow>(); if(!follow)follow=cam.gameObject.AddComponent<DungeonCameraFollow>(); follow.target=player; }
     }
-
-    void CreateEnemies()
-    {
-        Vector2[] positions = { new Vector2(-7, 6), new Vector2(7, 6), new Vector2(8, -5), new Vector2(-7, -6) };
-        foreach (var p in positions)
-        {
-            GameObject enemy = new GameObject("Dungeon Slime");
-            enemy.transform.position = p;
-            var sr = enemy.AddComponent<SpriteRenderer>();
-            sr.sprite = heroSprite;
-            sr.color = new Color(0.75f, 0.25f, 0.9f);
-            sr.sortingOrder = 4;
-            enemy.transform.localScale = Vector3.one * 0.72f;
-            enemy.AddComponent<CircleCollider2D>().isTrigger = true;
-            var brain = enemy.AddComponent<DungeonEnemy>();
-            brain.game = this;
-            brain.target = player;
-        }
+    void DecorateDungeon() {
+        Place(torchSprite,new Vector2(-15,10),1.2f,8); Place(torchSprite,new Vector2(15,10),1.2f,8);
+        Place(torchSprite,new Vector2(-15,-10),1.2f,8); Place(torchSprite,new Vector2(15,-10),1.2f,8);
+        Place(carpetSprite,new Vector2(0,0),3.5f,1);
+        Place(skullSprite,new Vector2(-10,8),1,4); Place(skullSprite,new Vector2(10,-8),1,4);
+        Place(vaseSprite,new Vector2(-12,-7),1,5); Place(vaseSprite,new Vector2(12,7),1,5);
+        Place(chainSprite,new Vector2(-3,10),1.2f,5); Place(chainSprite,new Vector2(3,-10),1.2f,5);
+        Place(boneSprite,new Vector2(7,9),.8f,4); Place(boneSprite,new Vector2(-8,-9),.8f,4);
     }
-
-    void CreatePickups()
-    {
-        Vector2[] positions = { new Vector2(-9, 5), new Vector2(-3, 8), new Vector2(4, -7), new Vector2(10, 2), new Vector2(12, -7) };
-        foreach (var p in positions)
-        {
-            GameObject coin = new GameObject("Gold Coin");
-            coin.transform.position = p;
-            var sr = coin.AddComponent<SpriteRenderer>();
-            sr.sprite = heroSprite;
-            sr.color = new Color(1f, 0.78f, 0.12f);
-            sr.sortingOrder = 3;
-            coin.transform.localScale = Vector3.one * 0.35f;
-            coin.AddComponent<CircleCollider2D>().isTrigger = true;
-            coin.AddComponent<DungeonCoin>().game = this;
-        }
+    void Place(Sprite s, Vector2 p, float scale, int order) { if(!s)return; var g=new GameObject("Dungeon Decoration");g.transform.position=p;g.transform.localScale=Vector3.one*scale;var r=g.AddComponent<SpriteRenderer>();r.sprite=s;r.sortingOrder=order; }
+    void CreateEnemies() {
+        SpawnEnemy(slimeSprite,new Vector2(-8,7),1.7f,2);
+        SpawnEnemy(slimeSprite,new Vector2(7,7),1.7f,2);
+        SpawnEnemy(skeletonSprite,new Vector2(10,2),1.25f,3);
+        SpawnEnemy(skeletonSprite,new Vector2(7,-7),1.25f,3);
+        SpawnEnemy(batSprite,new Vector2(-8,-7),2.1f,1);
+        SpawnEnemy(batSprite,new Vector2(12,-3),2.1f,1);
+        SpawnEnemy(ratSprite,new Vector2(-12,5),2.4f,1);
+        SpawnEnemy(ratSprite,new Vector2(4,9),2.4f,1);
     }
-
-    void CreateExit()
-    {
-        GameObject exit = new GameObject("Dungeon Exit");
-        exit.transform.position = new Vector2(13, 8);
-        var sr = exit.AddComponent<SpriteRenderer>();
-        sr.sprite = heroSprite;
-        sr.color = new Color(0.2f, 1f, 0.55f);
-        sr.sortingOrder = 2;
-        exit.transform.localScale = new Vector3(1.2f, 1.6f, 1);
-        exit.AddComponent<BoxCollider2D>().isTrigger = true;
-        exit.AddComponent<DungeonExit>().game = this;
+    void SpawnEnemy(Sprite sprite, Vector2 pos, float speed, int hp) {
+        var e=new GameObject("Dungeon Monster");e.transform.position=pos;
+        var sr=e.AddComponent<SpriteRenderer>();sr.sprite=sprite? sprite:slimeSprite;sr.sortingOrder=9;
+        e.AddComponent<CircleCollider2D>().isTrigger=true;
+        var brain=e.AddComponent<DungeonEnemy>();brain.game=this;brain.target=player;brain.speed=speed;brain.SetHealth(hp);
     }
-
-    void CreateUI()
-    {
-        var canvasGo = new GameObject("Dungeon HUD");
-        var canvas = canvasGo.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvasGo.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        canvasGo.AddComponent<GraphicRaycaster>();
-        hud = MakeText(canvas.transform, "HUD", new Vector2(18, -18), new Vector2(520, 42), 22, TextAnchor.UpperLeft);
-        message = MakeText(canvas.transform, "Message", new Vector2(0, 18), new Vector2(650, 55), 24, TextAnchor.LowerCenter);
-        message.rectTransform.anchorMin = new Vector2(.5f, 0);
-        message.rectTransform.anchorMax = new Vector2(.5f, 0);
-        message.text = "WASD / Arrows: Move     SPACE: Attack";
+    void CreatePickups() {
+        Vector2[] coinsAt={new(-11,5),new(-5,9),new(5,9),new(12,5),new(-11,-5),new(-4,-9),new(4,-9),new(12,-5)};
+        foreach(var p in coinsAt) { var c=MakePickup("Gold Coin",coinSprite,p,.85f);c.AddComponent<CircleCollider2D>().isTrigger=true;c.AddComponent<DungeonCoin>().game=this; }
+        MakeItem("Red Potion",potionRed,new Vector2(-3,6),1);
+        MakeItem("Blue Potion",potionBlue,new Vector2(5,5),1);
+        MakeItem("Green Potion",potionGreen,new Vector2(9,-5),1);
+        MakeItem("Dungeon Key",keySprite,new Vector2(0,-9),1);
+        MakeItem("Sword Relic",swordSprite,new Vector2(-13,-2),.9f);
+        MakeItem("Shield Relic",shieldSprite,new Vector2(13,2),.9f);
     }
-
-    Text MakeText(Transform parent, string name, Vector2 pos, Vector2 size, int fontSize, TextAnchor align)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        var rect = go.AddComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0, 1);
-        rect.anchorMax = new Vector2(0, 1);
-        rect.pivot = new Vector2(0, 1);
-        rect.anchoredPosition = pos;
-        rect.sizeDelta = size;
-        var text = go.AddComponent<Text>();
-        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        text.fontSize = fontSize;
-        text.color = Color.white;
-        text.alignment = align;
-        text.horizontalOverflow = HorizontalWrapMode.Overflow;
-        text.verticalOverflow = VerticalWrapMode.Overflow;
-        return text;
+    GameObject MakePickup(string n,Sprite s,Vector2 p,float size){var g=new GameObject(n);g.transform.position=p;g.transform.localScale=Vector3.one*size;var r=g.AddComponent<SpriteRenderer>();r.sprite=s;r.sortingOrder=7;return g;}
+    void MakeItem(string n,Sprite s,Vector2 p,float size){if(!s)return;var g=MakePickup(n,s,p,size);g.AddComponent<CircleCollider2D>().isTrigger=true;g.AddComponent<DungeonItemPickup>().game=this;}
+    void CreateTraps() {
+        Vector2[] positions={new(-6,2),new(-6,3),new(6,-2),new(6,-3),new(11,0),new(-11,0)};
+        foreach(var p in positions){if(!spikeSprite)continue;var g=MakePickup("Spike Trap",spikeSprite,p,.9f);g.AddComponent<BoxCollider2D>().isTrigger=true;g.AddComponent<DungeonSpike>().game=this;}
     }
-
-    public void UpdateHud()
-    {
-        if (hud) hud.text = "DUNGEON TALE     HP: " + playerHealth + "     GOLD: " + coins + "     SLIMES: " + enemiesRemaining;
+    void CreateExit(){var g=MakePickup("Dungeon Exit",doorSprite,new Vector2(15,0),1.8f);g.AddComponent<BoxCollider2D>().isTrigger=true;g.AddComponent<DungeonExit>().game=this;}
+    void CreateUI() {
+        var canvasGo=new GameObject("Dungeon HUD");var canvas=canvasGo.AddComponent<Canvas>();canvas.renderMode=RenderMode.ScreenSpaceOverlay;
+        canvasGo.AddComponent<CanvasScaler>().uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;canvasGo.AddComponent<GraphicRaycaster>();
+        hud=MakeText(canvas.transform,"HUD",new Vector2(18,-16),new Vector2(800,42),21,TextAnchor.UpperLeft);
+        message=MakeText(canvas.transform,"Message",new Vector2(0,18),new Vector2(850,54),20,TextAnchor.LowerCenter);
+        message.rectTransform.anchorMin=new Vector2(.5f,0);message.rectTransform.anchorMax=new Vector2(.5f,0);
+        message.text="WASD / Arrows: Move     SPACE: Attack     E: Use potion";
     }
-
-    public void ShowMessage(string value)
-    {
-        if (message) message.text = value;
+    Text MakeText(Transform parent,string n,Vector2 pos,Vector2 size,int fs,TextAnchor align){
+        var g=new GameObject(n);g.transform.SetParent(parent,false);var rt=g.AddComponent<RectTransform>();rt.anchorMin=new Vector2(0,1);rt.anchorMax=new Vector2(0,1);rt.pivot=new Vector2(0,1);rt.anchoredPosition=pos;rt.sizeDelta=size;
+        var t=g.AddComponent<Text>();t.font=Resources.GetBuiltinResource<Font>("Arial.ttf");t.fontSize=fs;t.color=Color.white;t.alignment=align;t.horizontalOverflow=HorizontalWrapMode.Overflow;return t;
     }
-
-    public void DamagePlayer()
-    {
-        if (finished) return;
-        playerHealth--;
-        UpdateHud();
-        if (playerHealth <= 0)
-        {
-            finished = true;
-            ShowMessage("YOU WERE DEFEATED  -  Press R to restart");
-        }
-    }
-
-    public void EnemyDefeated()
-    {
-        enemiesRemaining = Mathf.Max(0, enemiesRemaining - 1);
-        UpdateHud();
-        if (enemiesRemaining == 0) ShowMessage("All slimes defeated! Find the green exit.");
-    }
-
-    public void CollectCoin()
-    {
-        coins++;
-        UpdateHud();
-    }
-
-    public void ReachExit()
-    {
-        if (enemiesRemaining > 0) { ShowMessage("Defeat every slime before leaving!"); return; }
-        finished = true;
-        ShowMessage("DUNGEON CLEARED!  Gold collected: " + coins + "  -  Press R to play again");
-    }
-
-    void Update()
-    {
-        if (finished && Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-    }
-
-    public bool IsFinished() { return finished; }
+    public void UpdateHud(){if(hud)hud.text=$"DUNGEON TALE     HP: {playerHealth}/{maxHealth}     GOLD: {coins}     POTIONS: {potions}     MONSTERS: {enemiesRemaining}";}
+    public void ShowMessage(string s){if(message)message.text=s;}
+    public void DamagePlayer(){if(finished||Time.time<invulnerableUntil)return;invulnerableUntil=Time.time+0.8f;playerHealth--;UpdateHud();if(playerHealth<=0){finished=true;ShowMessage("YOU WERE DEFEATED - Press R to restart");}}
+    public void EnemyDefeated(){enemiesRemaining=Mathf.Max(0,enemiesRemaining-1);UpdateHud();if(enemiesRemaining==0)ShowMessage(hasKey?"All monsters defeated! Reach the exit.":"All monsters defeated! Find the key and reach the exit.");}
+    public void CollectCoin(){coins++;UpdateHud();}
+    public void CollectItem(string item){if(item=="Dungeon Key"){hasKey=true;ShowMessage("Dungeon key collected! The exit is unlocked.");}else if(item.Contains("Potion")){potions++;ShowMessage("Potion collected. Press E to restore health.");}UpdateHud();}
+    public void UsePotion(){if(potions<=0||playerHealth>=maxHealth)return;potions--;playerHealth=Mathf.Min(maxHealth,playerHealth+3);UpdateHud();ShowMessage("Potion used. Health restored.");}
+    public void HitTrap(){DamagePlayer();}
+    public void ReachExit(){if(enemiesRemaining>0){ShowMessage("Defeat every monster first!");return;}if(!hasKey){ShowMessage("The exit is locked. Find the dungeon key!");return;}finished=true;ShowMessage("DUNGEON CLEARED! Gold: "+coins+" - Press R to play again");}
+    void Update(){if(Keyboard.current==null)return;if(Keyboard.current.eKey.wasPressedThisFrame)UsePotion();if(finished&&Keyboard.current.rKey.wasPressedThisFrame)SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);}
+    public bool IsFinished(){return finished;}
 }
