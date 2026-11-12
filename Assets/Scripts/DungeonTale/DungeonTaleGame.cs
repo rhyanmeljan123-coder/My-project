@@ -10,7 +10,9 @@ public class DungeonTaleGame : MonoBehaviour
     public Tilemap floorMap, wallMap;
     public TileBase floorTile, wallTile;
     [Header("Atlas sprites")]
-    public Sprite heroSprite, slimeSprite, skeletonSprite, batSprite, ratSprite, coinSprite, torchSprite, spikeSprite, doorSprite;
+    public Sprite heroSprite;
+    public Sprite[] heroWalkFrames;
+    public Sprite slimeSprite, skeletonSprite, batSprite, ratSprite, coinSprite, torchSprite, spikeSprite, doorSprite;
     public Sprite potionRed, potionBlue, potionGreen, keySprite, swordSprite, shieldSprite, skullSprite, vaseSprite, chainSprite, boneSprite, carpetSprite;
     [Header("Player stats")]
     public int playerHealth = 6, maxHealth = 6, coins, potions;
