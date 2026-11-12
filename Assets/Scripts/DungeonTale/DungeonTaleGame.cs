@@ -203,7 +203,7 @@ public class DungeonTaleGame : MonoBehaviour
 
     void Update()
     {
-        if (finished && Input.GetKeyDown(KeyCode.R))
+        if (finished && Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
