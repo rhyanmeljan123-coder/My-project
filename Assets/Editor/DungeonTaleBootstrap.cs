@@ -45,7 +45,11 @@ public static class DungeonTaleBootstrap
         var go = new GameObject("Dungeon Tale Game");
         var game = go.AddComponent<DungeonTaleGame>();
         game.floorMap = floorMap; game.wallMap = wallMap; game.floorTile = floor; game.wallTile = wall;
-        game.heroSprite = hero;
+        game.heroSprite = FindSprite("Hero_0") ? FindSprite("Hero_0") : hero;
+        game.heroWalkFrames = new Sprite[] {
+            FindSprite("Hero_1"), FindSprite("Hero_2"), FindSprite("Hero_3"),
+            FindSprite("Hero_4"), FindSprite("Hero_5"), FindSprite("Hero_6"), FindSprite("Hero_7")
+        };
         game.slimeSprite = FindSprite("Char_Slime");
         game.skeletonSprite = FindSprite("Char_Skeletone");
         game.batSprite = FindSprite("Char_Bat");
