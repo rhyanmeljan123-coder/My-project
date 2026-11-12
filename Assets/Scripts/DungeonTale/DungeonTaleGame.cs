@@ -86,8 +86,21 @@ public class DungeonTaleGame : MonoBehaviour
     }
     void CreateExit(){var g=MakePickup("Dungeon Exit",doorSprite,new Vector2(15,0),1.8f);g.AddComponent<BoxCollider2D>().isTrigger=true;g.AddComponent<DungeonExit>().game=this;}
     void CreateUI() {
-        var canvasGo=new GameObject("Dungeon HUD");var canvas=canvasGo.AddComponent<Canvas>();canvas.renderMode=RenderMode.ScreenSpaceOverlay;
-        canvasGo.AddComponent<CanvasScaler>().uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;canvasGo.AddComponent<GraphicRaycaster>();
+        // Give UI Images a real, readable white sprite so the health bar is rendered.
+        var whiteTexture = new Texture2D(1, 1, TextureFormat.RGBA32, false);
+        whiteTexture.SetPixel(0, 0, Color.white);
+        whiteTexture.Apply();
+        uiWhiteSprite = Sprite.Create(whiteTexture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f));
+
+        var canvasGo=new GameObject("Dungeon HUD");
+        var canvas=canvasGo.AddComponent<Canvas>();
+        canvas.renderMode=RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder=100;
+        var scaler=canvasGo.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution=new Vector2(1920,1080);
+        scaler.matchWidthOrHeight=0.5f;
+        canvasGo.AddComponent<GraphicRaycaster>();
         hud=MakeText(canvas.transform,"HUD",new Vector2(18,-16),new Vector2(800,42),21,TextAnchor.UpperLeft);
         CreateHealthBar(canvas.transform);
         message=MakeText(canvas.transform,"Message",new Vector2(0,18),new Vector2(850,54),20,TextAnchor.LowerCenter);
@@ -126,8 +139,9 @@ public class DungeonTaleGame : MonoBehaviour
         healthFill.color = new Color(0.15f, 0.85f, 0.28f, 1f);
         healthFill.raycastTarget = false;
 
-        healthLabel = MakeText(parent, "Health Label", new Vector2(336, -65), new Vector2(150, 34), 22, TextAnchor.UpperLeft);
+        healthLabel = MakeText(parent, "Health Label", new Vector2(336, -65), new Vector2(190, 34), 22, TextAnchor.UpperLeft);
         healthLabel.fontStyle = FontStyle.Bold;
+        healthLabel.color = Color.white;
     }
 
     public void UpdateHud()
