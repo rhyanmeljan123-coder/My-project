@@ -9,7 +9,7 @@ public class DungeonPlayerController : MonoBehaviour
     public float attackRange = 1.35f;
     public float attackCooldown = 0.35f;
     public float walkFramesPerSecond = 9f;
-    public float swordSwingDuration = 0.22f;
+    public float swordSwingDuration = 0.28f;
 
     private Rigidbody2D body;
     private SpriteRenderer spriteRenderer;
@@ -19,9 +19,8 @@ public class DungeonPlayerController : MonoBehaviour
     private int walkFrame;
     private Sprite idleSprite;
     private Sprite[] walkSprites = new Sprite[0];
-    private SpriteRenderer swordRenderer;
-    private Transform swordPivot;
     private float swingTimer;
+    private Sprite[] currentWalkFrames = new Sprite[0];
     private Vector2 facingDirection = Vector2.right;
 
     void Awake()
@@ -40,11 +39,12 @@ public class DungeonPlayerController : MonoBehaviour
 
     void Start()
     {
-        if (game != null) walkSprites = game.heroWalkFrames;
-        if (walkSprites == null || walkSprites.Length == 0)
-            walkSprites = gameObject.GetComponent<DungeonTaleGame>()?.heroWalkFrames;
+        if (game != null)
+        {
+            idleSprite = game.playerIdleSprite != null ? game.playerIdleSprite : idleSprite;
+            currentWalkFrames = game.walkDownFrames;
+        }
         if (spriteRenderer != null && idleSprite != null) spriteRenderer.sprite = idleSprite;
-        CreateSwordVisual();
     }
 
     void Update()
@@ -58,8 +58,16 @@ public class DungeonPlayerController : MonoBehaviour
 
         movement = ReadMovement();
         if (movement.sqrMagnitude > 0.01f) facingDirection = movement.normalized;
-        Animate(movement.sqrMagnitude > 0.01f);
-        UpdateSwordSwing();
+        if (swingTimer > 0f)
+        {
+            swingTimer -= Time.deltaTime;
+            AnimateAttack();
+        }
+        else
+        {
+            SelectWalkDirection();
+            Animate(movement.sqrMagnitude > 0.01f);
+        }
 
         Keyboard keyboard = Keyboard.current;
         if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame && Time.time >= nextAttack)
@@ -123,44 +131,45 @@ public class DungeonPlayerController : MonoBehaviour
     }
 
 
-    void CreateSwordVisual()
+    void SelectWalkDirection()
     {
-        if (game == null || game.swordSprite == null) return;
-
-        var pivotObject = new GameObject("Sword Swing Pivot");
-        swordPivot = pivotObject.transform;
-        swordPivot.SetParent(transform, false);
-        swordPivot.localPosition = Vector3.zero;
-        swordPivot.localScale = Vector3.one * 0.9f;
-
-        var blade = new GameObject("Sword Blade");
-        blade.transform.SetParent(swordPivot, false);
-        blade.transform.localPosition = new Vector3(0.78f, 0f, 0f);
-        blade.transform.localRotation = Quaternion.Euler(0f, 0f, -45f);
-
-        swordRenderer = blade.AddComponent<SpriteRenderer>();
-        swordRenderer.sprite = game.swordSprite;
-        swordRenderer.sortingOrder = 15;
-        swordRenderer.enabled = false;
+        if (game == null) return;
+        if (Mathf.Abs(movement.x) > Mathf.Abs(movement.y))
+            currentWalkFrames = movement.x < 0 ? game.walkLeftFrames : game.walkRightFrames;
+        else if (movement.y > 0.01f)
+            currentWalkFrames = game.walkUpFrames;
+        else if (movement.y < -0.01f)
+            currentWalkFrames = game.walkDownFrames;
+        else if (currentWalkFrames == null || currentWalkFrames.Length == 0)
+            currentWalkFrames = game.walkDownFrames;
     }
 
-    void UpdateSwordSwing()
+    void Animate(bool walking)
     {
-        if (swordRenderer == null || swordPivot == null) return;
-        if (swingTimer <= 0f)
+        if (spriteRenderer == null) return;
+        if (!walking || currentWalkFrames == null || currentWalkFrames.Length == 0)
         {
-            swordRenderer.enabled = false;
+            animationTimer = 0f;
+            walkFrame = 0;
+            if (idleSprite != null) spriteRenderer.sprite = idleSprite;
             return;
         }
 
-        swingTimer -= Time.deltaTime;
-        float progress = 1f - Mathf.Clamp01(swingTimer / Mathf.Max(0.01f, swordSwingDuration));
-        // Rotate the sword's pivot around the player, not the sword around its own centre.
-        float easedProgress = Mathf.SmoothStep(0f, 1f, progress);
-        float facingAngle = Mathf.Atan2(facingDirection.y, facingDirection.x) * Mathf.Rad2Deg;
-        float swingAngle = Mathf.Lerp(-105f, 105f, easedProgress);
-        swordPivot.localRotation = Quaternion.Euler(0f, 0f, facingAngle + swingAngle);
-        swordRenderer.enabled = true;
+        animationTimer += Time.deltaTime;
+        float frameDuration = 1f / Mathf.Max(1f, walkFramesPerSecond);
+        if (animationTimer >= frameDuration)
+        {
+            animationTimer %= frameDuration;
+            walkFrame = (walkFrame + 1) % currentWalkFrames.Length;
+        }
+        if (currentWalkFrames[walkFrame] != null) spriteRenderer.sprite = currentWalkFrames[walkFrame];
+    }
+
+    void AnimateAttack()
+    {
+        if (spriteRenderer == null || game == null || game.playerAttackFrames == null || game.playerAttackFrames.Length == 0) return;
+        int frame = swingTimer > swordSwingDuration * 0.5f ? 0 : Mathf.Min(1, game.playerAttackFrames.Length - 1);
+        if (game.playerAttackFrames[frame] != null) spriteRenderer.sprite = game.playerAttackFrames[frame];
     }
 
     void OnDrawGizmosSelected()
