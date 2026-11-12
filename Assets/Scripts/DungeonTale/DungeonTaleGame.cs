@@ -1,7 +1,8 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;\nusing UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
+using UnityEngine.InputSystem;
 
 public class DungeonTaleGame : MonoBehaviour
 {
