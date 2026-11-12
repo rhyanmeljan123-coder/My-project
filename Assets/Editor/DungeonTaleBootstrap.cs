@@ -45,11 +45,14 @@ public static class DungeonTaleBootstrap
         var go = new GameObject("Dungeon Tale Game");
         var game = go.AddComponent<DungeonTaleGame>();
         game.floorMap = floorMap; game.wallMap = wallMap; game.floorTile = floor; game.wallTile = wall;
-        game.heroSprite = FindSprite("Hero_0") ? FindSprite("Hero_0") : hero;
-        game.heroWalkFrames = new Sprite[] {
-            FindSprite("Hero_1"), FindSprite("Hero_2"), FindSprite("Hero_3"),
-            FindSprite("Hero_4"), FindSprite("Hero_5"), FindSprite("Hero_6"), FindSprite("Hero_7")
-        };
+        game.playerIdleSprite = FindSprite("Player_0");
+        game.heroSprite = game.playerIdleSprite ? game.playerIdleSprite : (FindSprite("Hero_0") ? FindSprite("Hero_0") : hero);
+        game.walkDownFrames = FindSpriteSequence("Player_", 0, 6);
+        game.walkLeftFrames = FindSpriteSequence("Player_", 6, 6);
+        game.walkRightFrames = FindSpriteSequence("Player_", 12, 6);
+        game.walkUpFrames = FindSpriteSequence("Player_", 18, 6);
+        game.heroWalkFrames = game.walkDownFrames;
+        game.playerAttackFrames = FindSpriteSequence("Player_Actions_", 0, 2);
         game.slimeSprite = FindSprite("Char_Slime");
         game.skeletonSprite = FindSprite("Char_Skeletone");
         game.batSprite = FindSprite("Char_Bat");
@@ -91,10 +94,16 @@ public static class DungeonTaleBootstrap
         }
         return null;
     }
+    static Sprite[] FindSpriteSequence(string prefix, int start, int count) {
+        var result = new Sprite[count];
+        for (int i = 0; i < count; i++) result[i] = FindSprite(prefix + (start + i));
+        return result;
+    }
+
     static Sprite FindSprite(string n) {
         foreach (var id in AssetDatabase.FindAssets("t:Texture2D")) {
             var p = AssetDatabase.GUIDToAssetPath(id);
-            if (!p.StartsWith(Root + "Sprites/")) continue;
+            if (!p.StartsWith(Root + "Sprites/") && !p.StartsWith("Assets/player/")) continue;
             foreach (var o in AssetDatabase.LoadAllAssetsAtPath(p))
                 if (o is Sprite s && s.name == n) return s;
         }
