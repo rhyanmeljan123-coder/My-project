@@ -19,7 +19,9 @@ public class DungeonTaleGame : MonoBehaviour
     public int enemiesRemaining = 8;
     private Text hud, message;
     private Image healthFill;
+    private RectTransform healthFillRect;
     private Text healthLabel;
+    private Sprite uiWhiteSprite;
     private Transform player;
     private bool finished, hasKey;
     private float invulnerableUntil;
@@ -98,34 +100,45 @@ public class DungeonTaleGame : MonoBehaviour
         var background = new GameObject("Health Bar Background", typeof(RectTransform), typeof(Image));
         background.transform.SetParent(parent, false);
         var bgRect = background.GetComponent<RectTransform>();
-        bgRect.anchorMin = new Vector2(0, 1); bgRect.anchorMax = new Vector2(0, 1);
-        bgRect.pivot = new Vector2(0, 1); bgRect.anchoredPosition = new Vector2(18, -48);
-        bgRect.sizeDelta = new Vector2(250, 24);
-        background.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.15f, 0.95f);
+        bgRect.anchorMin = new Vector2(0, 1);
+        bgRect.anchorMax = new Vector2(0, 1);
+        bgRect.pivot = new Vector2(0, 1);
+        bgRect.anchoredPosition = new Vector2(24, -64);
+        bgRect.sizeDelta = new Vector2(300, 32);
+        var bgImage = background.GetComponent<Image>();
+        bgImage.sprite = uiWhiteSprite;
+        bgImage.color = new Color(0.035f, 0.04f, 0.055f, 0.98f);
+        bgImage.raycastTarget = false;
 
         var fill = new GameObject("Health Bar Fill", typeof(RectTransform), typeof(Image));
         fill.transform.SetParent(background.transform, false);
-        var fillRect = fill.GetComponent<RectTransform>();
-        fillRect.anchorMin = Vector2.zero; fillRect.anchorMax = Vector2.one;
-        fillRect.offsetMin = new Vector2(3, 3); fillRect.offsetMax = new Vector2(-3, -3);
+        healthFillRect = fill.GetComponent<RectTransform>();
+        healthFillRect.anchorMin = new Vector2(0, 0);
+        healthFillRect.anchorMax = new Vector2(0, 1);
+        healthFillRect.pivot = new Vector2(0, 0.5f);
+        healthFillRect.anchoredPosition = new Vector2(4, 0);
+        healthFillRect.sizeDelta = new Vector2(292, -8);
         healthFill = fill.GetComponent<Image>();
-        healthFill.type = Image.Type.Filled;
-        healthFill.fillMethod = Image.FillMethod.Horizontal;
-        healthFill.fillOrigin = (int)Image.OriginHorizontal.Left;
-        healthFill.color = new Color(0.2f, 0.85f, 0.35f, 1f);
+        healthFill.sprite = uiWhiteSprite;
+        healthFill.color = new Color(0.15f, 0.85f, 0.28f, 1f);
+        healthFill.raycastTarget = false;
 
-        healthLabel = MakeText(parent, "Health Label", new Vector2(278, -48), new Vector2(120, 28), 18, TextAnchor.UpperLeft);
+        healthLabel = MakeText(parent, "Health Label", new Vector2(336, -65), new Vector2(150, 34), 22, TextAnchor.UpperLeft);
+        healthLabel.fontStyle = FontStyle.Bold;
     }
 
     public void UpdateHud()
     {
         if (hud) hud.text = $"DUNGEON TALE     GOLD: {coins}     POTIONS: {potions}     MONSTERS: {enemiesRemaining}";
+        float healthRatio = maxHealth > 0 ? Mathf.Clamp01((float)playerHealth / maxHealth) : 0f;
+        if (healthFillRect) healthFillRect.sizeDelta = new Vector2(292f * healthRatio, -8f);
         if (healthFill)
         {
-            healthFill.fillAmount = maxHealth > 0 ? Mathf.Clamp01((float)playerHealth / maxHealth) : 0f;
-            healthFill.color = playerHealth <= 2 ? new Color(0.9f, 0.16f, 0.12f) : playerHealth <= 4 ? new Color(1f, 0.65f, 0.12f) : new Color(0.2f, 0.85f, 0.35f);
+            healthFill.color = playerHealth <= 2 ? new Color(0.95f, 0.12f, 0.1f) :
+                               playerHealth <= 4 ? new Color(1f, 0.62f, 0.08f) :
+                               new Color(0.15f, 0.85f, 0.28f);
         }
-        if (healthLabel) healthLabel.text = $"HP {playerHealth}/{maxHealth}";
+        if (healthLabel) healthLabel.text = $"HEALTH  {playerHealth}/{maxHealth}";
     }
     public void ShowMessage(string s){if(message)message.text=s;}
     public void DamagePlayer(){if(finished||Time.time<invulnerableUntil)return;invulnerableUntil=Time.time+0.8f;playerHealth--;UpdateHud();if(playerHealth<=0){finished=true;ShowMessage("YOU WERE DEFEATED - Press R to restart");}}
