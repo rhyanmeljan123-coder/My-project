@@ -14,7 +14,7 @@ public class DungeonTaleGame : MonoBehaviour
     public Sprite playerIdleSprite;
     public Sprite[] heroWalkFrames;
     public Sprite[] walkDownFrames, walkLeftFrames, walkRightFrames, walkUpFrames;
-    public Sprite[] playerAttackFrames;
+    public Sprite[] attackDownFrames, attackLeftFrames, attackRightFrames, attackUpFrames;
     public Sprite slimeSprite, skeletonSprite, batSprite, ratSprite, coinSprite, torchSprite, spikeSprite, doorSprite;
     public Sprite potionRed, potionBlue, potionGreen, keySprite, swordSprite, shieldSprite, skullSprite, vaseSprite, chainSprite, boneSprite, carpetSprite;
     [Header("Player stats")]
