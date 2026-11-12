@@ -95,30 +95,6 @@ public class DungeonPlayerController : MonoBehaviour
         body.MovePosition(body.position + movement * moveSpeed * Time.fixedDeltaTime);
     }
 
-    void Animate(bool walking)
-    {
-        if (spriteRenderer == null) return;
-        if (movement.x < -0.01f) spriteRenderer.flipX = true;
-        else if (movement.x > 0.01f) spriteRenderer.flipX = false;
-
-        if (!walking || walkSprites == null || walkSprites.Length == 0)
-        {
-            animationTimer = 0f;
-            walkFrame = 0;
-            if (idleSprite != null) spriteRenderer.sprite = idleSprite;
-            return;
-        }
-
-        animationTimer += Time.deltaTime;
-        float frameDuration = 1f / Mathf.Max(1f, walkFramesPerSecond);
-        if (animationTimer >= frameDuration)
-        {
-            animationTimer %= frameDuration;
-            walkFrame = (walkFrame + 1) % walkSprites.Length;
-        }
-        if (walkSprites[walkFrame] != null) spriteRenderer.sprite = walkSprites[walkFrame];
-    }
-
     void Attack()
     {
         swingTimer = swordSwingDuration;
