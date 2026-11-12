@@ -81,7 +81,7 @@ public class DungeonTaleGame : MonoBehaviour
     void CreatePickups() {
         Vector2[] coinsAt={new(-11,5),new(-5,9),new(5,9),new(12,5),new(-11,-5),new(-4,-9),new(4,-9),new(12,-5)};
         foreach(var p in coinsAt) { var c=MakePickup("Gold Coin",packCoinSprite ? packCoinSprite : coinSprite,p,.85f);c.AddComponent<CircleCollider2D>().isTrigger=true;c.AddComponent<DungeonCoin>().game=this; }
-        MakeItem("Red Potion",potionRed,new Vector2(-3,6),1);
+        MakeItem("Red Potion",packFlaskSprite ? packFlaskSprite : potionRed,new Vector2(-3,6),1);
         MakeItem("Blue Potion",potionBlue,new Vector2(5,5),1);
         MakeItem("Green Potion",potionGreen,new Vector2(9,-5),1);
         MakeItem("Dungeon Key",keySprite,new Vector2(0,-9),1);
