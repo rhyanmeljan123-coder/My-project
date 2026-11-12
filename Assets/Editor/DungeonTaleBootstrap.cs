@@ -90,7 +90,7 @@ public static class DungeonTaleBootstrap
     static Sprite FindSprite(string n) {
         foreach (var id in AssetDatabase.FindAssets("t:Texture2D")) {
             var p = AssetDatabase.GUIDToAssetPath(id);
-            if (!p.StartsWith(Root + "Sprites/Atlas.png")) continue;
+            if (!p.StartsWith(Root + "Sprites/")) continue;
             foreach (var o in AssetDatabase.LoadAllAssetsAtPath(p))
                 if (o is Sprite s && s.name == n) return s;
         }
