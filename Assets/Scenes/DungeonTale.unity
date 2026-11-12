@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &411117720
+--- !u!1 &431608961
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,9 +127,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 411117721}
-  - component: {fileID: 411117723}
-  - component: {fileID: 411117722}
+  - component: {fileID: 431608962}
+  - component: {fileID: 431608964}
+  - component: {fileID: 431608963}
   m_Layer: 0
   m_Name: Floor
   m_TagString: Untagged
@@ -137,29 +137,29 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &411117721
+--- !u!4 &431608962
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 411117720}
+  m_GameObject: {fileID: 431608961}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 440157517}
+  m_Father: {fileID: 2110934314}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!483693784 &411117722
+--- !u!483693784 &431608963
 TilemapRenderer:
   serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 411117720}
+  m_GameObject: {fileID: 431608961}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -208,13 +208,13 @@ TilemapRenderer:
   m_SortOrder: 0
   m_Mode: 0
   m_DetectChunkCullingBounds: 0
---- !u!1839735485 &411117723
+--- !u!1839735485 &431608964
 Tilemap:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 411117720}
+  m_GameObject: {fileID: 431608961}
   m_Enabled: 1
   m_Tiles:
   - first: {x: -17, y: -12, z: 0}
@@ -9024,7 +9024,7 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
---- !u!1 &440157516
+--- !u!1 &528704771
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -9032,45 +9032,111 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 440157517}
-  - component: {fileID: 440157518}
+  - component: {fileID: 528704773}
+  - component: {fileID: 528704772}
   m_Layer: 0
-  m_Name: Dungeon Grid
+  m_Name: Dungeon Tale Game
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &440157517
+--- !u!114 &528704772
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 528704771}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f259d038fe24c54199a829afdb6b3de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DungeonTaleGame
+  floorMap: {fileID: 431608964}
+  wallMap: {fileID: 1728727418}
+  floorTile: {fileID: 11400000, guid: 182ebfcecc3105a4bb80a67f4c29c05c, type: 2}
+  wallTile: {fileID: 11400000, guid: 13be62fe79a042f4d9c7afeb9c77f597, type: 2}
+  heroSprite: {fileID: -2311659948842064771, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  playerIdleSprite: {fileID: -2311659948842064771, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  heroWalkFrames:
+  - {fileID: -2311659948842064771, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: 7364682651488144517, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: -6287787046888575383, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: -1182821291677670348, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: -4709456396536258026, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: -4529042392078601758, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  walkDownFrames:
+  - {fileID: -2311659948842064771, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: 7364682651488144517, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: -6287787046888575383, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: -1182821291677670348, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: -4709456396536258026, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: -4529042392078601758, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  walkLeftFrames:
+  - {fileID: -7446026091647042388, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: 5938012242645255967, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: -4245738604243887485, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: 2473453845335418800, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: -3287367053296241113, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: -5319882733741912588, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  walkRightFrames:
+  - {fileID: 7365574002475698461, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: 6472545519820947264, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: -2472340072831945791, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: 4681514556078180949, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: -2521826894279438384, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: -7338765713033929952, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  walkUpFrames:
+  - {fileID: 1522305984107872113, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: -661973496601677656, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: -5989208844104669019, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: -620360788158790383, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: 5007636379019871947, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  - {fileID: 585951966842662488, guid: c4d9cac0b31f3df49a5c15dae6fc7f1c, type: 3}
+  playerAttackFrames:
+  - {fileID: -6600984052626506936, guid: f7af6a68080b8bc4eb8df787ef5b8a54, type: 3}
+  - {fileID: 5461699792217330279, guid: f7af6a68080b8bc4eb8df787ef5b8a54, type: 3}
+  slimeSprite: {fileID: -995825184, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
+  skeletonSprite: {fileID: -1797346199, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
+  batSprite: {fileID: 94621673, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
+  ratSprite: {fileID: 185838283, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
+  coinSprite: {fileID: 702371240, guid: a134d1880ea0c1b41a06728d3ac6f3be, type: 3}
+  torchSprite: {fileID: -51606216, guid: 79a9d1043655b5543a9c37ea527913f5, type: 3}
+  spikeSprite: {fileID: 596558381, guid: 72fe8c7945dd1c64eba2d762e8890aa9, type: 3}
+  doorSprite: {fileID: -125072430, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
+  potionRed: {fileID: 366320403, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
+  potionBlue: {fileID: 1629623867, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
+  potionGreen: {fileID: 1151777253, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
+  keySprite: {fileID: 1457225418, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
+  swordSprite: {fileID: 1329060588, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
+  shieldSprite: {fileID: -1272935615, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
+  skullSprite: {fileID: -1752388792, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
+  vaseSprite: {fileID: -484646789, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
+  chainSprite: {fileID: -1506547402, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
+  boneSprite: {fileID: -684481851, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
+  carpetSprite: {fileID: 297017320, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
+  playerHealth: 6
+  maxHealth: 6
+  coins: 0
+  potions: 0
+  enemiesRemaining: 8
+--- !u!4 &528704773
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 440157516}
+  m_GameObject: {fileID: 528704771}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 411117721}
-  - {fileID: 1291742827}
+  m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!156049354 &440157518
-Grid:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 440157516}
-  m_Enabled: 1
-  m_CellSize: {x: 1, y: 1, z: 1}
-  m_CellGap: {x: 0, y: 0, z: 0}
-  m_CellLayout: 0
-  m_CellSwizzle: 0
---- !u!1 &1291742823
+--- !u!1 &1728727417
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -9078,10 +9144,10 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1291742827}
-  - component: {fileID: 1291742824}
-  - component: {fileID: 1291742826}
-  - component: {fileID: 1291742825}
+  - component: {fileID: 1728727421}
+  - component: {fileID: 1728727418}
+  - component: {fileID: 1728727420}
+  - component: {fileID: 1728727419}
   m_Layer: 0
   m_Name: Walls
   m_TagString: Untagged
@@ -9089,13 +9155,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!1839735485 &1291742824
+--- !u!1839735485 &1728727418
 Tilemap:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1291742823}
+  m_GameObject: {fileID: 1728727417}
   m_Enabled: 1
   m_Tiles:
   - first: {x: -17, y: -12, z: 0}
@@ -10519,13 +10585,13 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
---- !u!19719996 &1291742825
+--- !u!19719996 &1728727419
 TilemapCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1291742823}
+  m_GameObject: {fileID: 1728727417}
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
@@ -10557,14 +10623,14 @@ TilemapCollider2D:
   m_MaximumTileChangeCount: 1000
   m_ExtrusionFactor: 0
   m_UseDelaunayMesh: 0
---- !u!483693784 &1291742826
+--- !u!483693784 &1728727420
 TilemapRenderer:
   serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1291742823}
+  m_GameObject: {fileID: 1728727417}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -10613,22 +10679,22 @@ TilemapRenderer:
   m_SortOrder: 0
   m_Mode: 0
   m_DetectChunkCullingBounds: 0
---- !u!4 &1291742827
+--- !u!4 &1728727421
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1291742823}
+  m_GameObject: {fileID: 1728727417}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 440157517}
+  m_Father: {fileID: 2110934314}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1488316283
+--- !u!1 &2046661869
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -10636,90 +10702,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1488316285}
-  - component: {fileID: 1488316284}
-  m_Layer: 0
-  m_Name: Dungeon Tale Game
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1488316284
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1488316283}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f259d038fe24c54199a829afdb6b3de, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DungeonTaleGame
-  floorMap: {fileID: 411117723}
-  wallMap: {fileID: 1291742824}
-  floorTile: {fileID: 11400000, guid: 182ebfcecc3105a4bb80a67f4c29c05c, type: 2}
-  wallTile: {fileID: 11400000, guid: 13be62fe79a042f4d9c7afeb9c77f597, type: 2}
-  heroSprite: {fileID: -1725898018, guid: b011d091d38ab2f499a1a067bd29d471, type: 3}
-  heroWalkFrames:
-  - {fileID: -1196128231, guid: b011d091d38ab2f499a1a067bd29d471, type: 3}
-  - {fileID: -2029640573, guid: b011d091d38ab2f499a1a067bd29d471, type: 3}
-  - {fileID: -760004126, guid: b011d091d38ab2f499a1a067bd29d471, type: 3}
-  - {fileID: -783453795, guid: b011d091d38ab2f499a1a067bd29d471, type: 3}
-  - {fileID: 251630329, guid: b011d091d38ab2f499a1a067bd29d471, type: 3}
-  - {fileID: 1078533793, guid: b011d091d38ab2f499a1a067bd29d471, type: 3}
-  - {fileID: 1238084693, guid: b011d091d38ab2f499a1a067bd29d471, type: 3}
-  slimeSprite: {fileID: -995825184, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
-  skeletonSprite: {fileID: -1797346199, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
-  batSprite: {fileID: 94621673, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
-  ratSprite: {fileID: 185838283, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
-  coinSprite: {fileID: 702371240, guid: a134d1880ea0c1b41a06728d3ac6f3be, type: 3}
-  torchSprite: {fileID: -51606216, guid: 79a9d1043655b5543a9c37ea527913f5, type: 3}
-  spikeSprite: {fileID: 596558381, guid: 72fe8c7945dd1c64eba2d762e8890aa9, type: 3}
-  doorSprite: {fileID: -125072430, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
-  potionRed: {fileID: 366320403, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
-  potionBlue: {fileID: 1629623867, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
-  potionGreen: {fileID: 1151777253, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
-  keySprite: {fileID: 1457225418, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
-  swordSprite: {fileID: 1329060588, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
-  shieldSprite: {fileID: -1272935615, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
-  skullSprite: {fileID: -1752388792, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
-  vaseSprite: {fileID: -484646789, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
-  chainSprite: {fileID: -1506547402, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
-  boneSprite: {fileID: -684481851, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
-  carpetSprite: {fileID: 297017320, guid: b631ed305dfd43c488e0f8edf5c829bc, type: 3}
-  playerHealth: 6
-  maxHealth: 6
-  coins: 0
-  potions: 0
-  enemiesRemaining: 8
---- !u!4 &1488316285
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1488316283}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1841686351
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1841686354}
-  - component: {fileID: 1841686353}
-  - component: {fileID: 1841686352}
+  - component: {fileID: 2046661872}
+  - component: {fileID: 2046661871}
+  - component: {fileID: 2046661870}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -10727,21 +10712,21 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &1841686352
+--- !u!81 &2046661870
 AudioListener:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1841686351}
+  m_GameObject: {fileID: 2046661869}
   m_Enabled: 1
---- !u!20 &1841686353
+--- !u!20 &2046661871
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1841686351}
+  m_GameObject: {fileID: 2046661869}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
@@ -10786,13 +10771,13 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!4 &1841686354
+--- !u!4 &2046661872
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1841686351}
+  m_GameObject: {fileID: 2046661869}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -14, y: 0, z: -10}
@@ -10801,10 +10786,56 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2110934313
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2110934314}
+  - component: {fileID: 2110934315}
+  m_Layer: 0
+  m_Name: Dungeon Grid
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2110934314
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2110934313}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 431608962}
+  - {fileID: 1728727421}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!156049354 &2110934315
+Grid:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2110934313}
+  m_Enabled: 1
+  m_CellSize: {x: 1, y: 1, z: 1}
+  m_CellGap: {x: 0, y: 0, z: 0}
+  m_CellLayout: 0
+  m_CellSwizzle: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1841686354}
-  - {fileID: 440157517}
-  - {fileID: 1488316285}
+  - {fileID: 2046661872}
+  - {fileID: 2110934314}
+  - {fileID: 528704773}
