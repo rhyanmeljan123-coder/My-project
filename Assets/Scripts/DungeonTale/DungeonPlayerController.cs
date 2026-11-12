@@ -9,7 +9,7 @@ public class DungeonPlayerController : MonoBehaviour
     public float attackRange = 1.35f;
     public float attackCooldown = 0.35f;
     public float walkFramesPerSecond = 9f;
-    public float swordSwingDuration = 0.28f;
+    public float attackFramesPerSecond = 8f;
 
     private Rigidbody2D body;
     private SpriteRenderer spriteRenderer;
@@ -22,6 +22,7 @@ public class DungeonPlayerController : MonoBehaviour
     private float swingTimer;
     private int attackFrame;
     private float attackFrameTimer;
+    private Sprite[] currentAttackFrames = new Sprite[0];
     private Sprite[] currentWalkFrames = new Sprite[0];
     private Vector2 facingDirection = Vector2.right;
 
@@ -100,11 +101,21 @@ public class DungeonPlayerController : MonoBehaviour
 
     void Attack()
     {
-        if (game == null || game.playerAttackFrames == null || game.playerAttackFrames.Length == 0) return;
-        swingTimer = swordSwingDuration;
+        if (game == null) return;
+
+        // Each direction has its own short swing sequence on the imported sheet.
+        if (Mathf.Abs(facingDirection.x) > Mathf.Abs(facingDirection.y))
+            currentAttackFrames = facingDirection.x < 0 ? game.attackLeftFrames : game.attackRightFrames;
+        else
+            currentAttackFrames = facingDirection.y > 0 ? game.attackUpFrames : game.attackDownFrames;
+
+        if (currentAttackFrames == null || currentAttackFrames.Length == 0) return;
+
         attackFrame = 0;
         attackFrameTimer = 0f;
-        if (game.playerAttackFrames[0] != null) spriteRenderer.sprite = game.playerAttackFrames[0];
+        float frameDuration = 1f / Mathf.Max(1f, attackFramesPerSecond);
+        swingTimer = currentAttackFrames.Length * frameDuration;
+        if (currentAttackFrames[0] != null) spriteRenderer.sprite = currentAttackFrames[0];
         Collider2D[] hits = Physics2D.OverlapCircleAll((Vector2)transform.position + facingDirection * 0.65f, attackRange);
         foreach (Collider2D hit in hits)
         {
@@ -150,17 +161,16 @@ public class DungeonPlayerController : MonoBehaviour
 
     void AnimateAttack()
     {
-        if (spriteRenderer == null || game == null || game.playerAttackFrames == null || game.playerAttackFrames.Length == 0) return;
+        if (spriteRenderer == null || currentAttackFrames == null || currentAttackFrames.Length == 0) return;
 
-        // SpriteRenderer shows one sprite only. Advance to the next attack frame
-        // after its own time slice; do not show the whole sequence together.
-        float frameDuration = swordSwingDuration / game.playerAttackFrames.Length;
+        // Show each directional swing frame for a full frame interval.
+        float frameDuration = 1f / Mathf.Max(1f, attackFramesPerSecond);
         attackFrameTimer += Time.deltaTime;
-        while (attackFrameTimer >= frameDuration && attackFrame < game.playerAttackFrames.Length - 1)
+        while (attackFrameTimer >= frameDuration && attackFrame < currentAttackFrames.Length - 1)
         {
             attackFrameTimer -= frameDuration;
             attackFrame++;
-            Sprite nextFrame = game.playerAttackFrames[attackFrame];
+            Sprite nextFrame = currentAttackFrames[attackFrame];
             if (nextFrame != null) spriteRenderer.sprite = nextFrame;
         }
     }
