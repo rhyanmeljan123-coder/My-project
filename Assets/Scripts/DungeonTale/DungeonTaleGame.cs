@@ -92,7 +92,25 @@ public class DungeonTaleGame : MonoBehaviour
     void MakeItem(string n,Sprite s,Vector2 p,float size){if(!s)return;var g=MakePickup(n,s,p,size);g.AddComponent<CircleCollider2D>().isTrigger=true;g.AddComponent<DungeonItemPickup>().game=this;}
     void CreateTraps() {
         Vector2[] positions={new(-6,2),new(-6,3),new(6,-2),new(6,-3),new(11,0),new(-11,0)};
-        foreach(var p in positions){Sprite trapArt = packSpikeSprite ? packSpikeSprite : spikeSprite;if(!trapArt)continue;var g=MakePickup("Spike Trap",trapArt,p,.9f);g.AddComponent<BoxCollider2D>().isTrigger=true;g.AddComponent<DungeonSpike>().game=this;}
+        Sprite trapArt = packSpikeSprite ? packSpikeSprite : spikeSprite;
+        if (!trapArt) {
+            Debug.LogWarning("Dungeon Tale: No spike sprite was found. Check the packSpikeSprite assignment in DungeonTaleBootstrap.");
+            return;
+        }
+
+        foreach (var p in positions) {
+            // The imported pack spikes are 16x16 sprites at 100 PPU.
+            // Scale them to approximately one Unity tile so they are visible.
+            var g = MakePickup("Spike Trap", trapArt, p, 6f);
+            var sr = g.GetComponent<SpriteRenderer>();
+            if (sr) sr.sortingOrder = 12;
+
+            var hitbox = g.AddComponent<BoxCollider2D>();
+            hitbox.isTrigger = true;
+            hitbox.size = new Vector2(0.16f, 0.16f);
+
+            g.AddComponent<DungeonSpike>().game = this;
+        }
     }
     void CreateExit(){var g=MakePickup("Dungeon Exit",doorSprite,new Vector2(15,0),1.8f);g.AddComponent<BoxCollider2D>().isTrigger=true;g.AddComponent<DungeonExit>().game=this;}
     void CreateUI() {
