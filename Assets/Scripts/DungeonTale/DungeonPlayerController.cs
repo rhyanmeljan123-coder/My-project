@@ -20,6 +20,7 @@ public class DungeonPlayerController : MonoBehaviour
     private Sprite idleSprite;
     private Sprite[] walkSprites = new Sprite[0];
     private SpriteRenderer swordRenderer;
+    private Transform swordPivot;
     private float swingTimer;
     private Vector2 facingDirection = Vector2.right;
 
@@ -125,10 +126,19 @@ public class DungeonPlayerController : MonoBehaviour
     void CreateSwordVisual()
     {
         if (game == null || game.swordSprite == null) return;
-        var sword = new GameObject("Sword Swing Visual");
-        sword.transform.SetParent(transform, false);
-        sword.transform.localScale = Vector3.one * 0.85f;
-        swordRenderer = sword.AddComponent<SpriteRenderer>();
+
+        var pivotObject = new GameObject("Sword Swing Pivot");
+        swordPivot = pivotObject.transform;
+        swordPivot.SetParent(transform, false);
+        swordPivot.localPosition = Vector3.zero;
+        swordPivot.localScale = Vector3.one * 0.9f;
+
+        var blade = new GameObject("Sword Blade");
+        blade.transform.SetParent(swordPivot, false);
+        blade.transform.localPosition = new Vector3(0.78f, 0f, 0f);
+        blade.transform.localRotation = Quaternion.Euler(0f, 0f, -45f);
+
+        swordRenderer = blade.AddComponent<SpriteRenderer>();
         swordRenderer.sprite = game.swordSprite;
         swordRenderer.sortingOrder = 15;
         swordRenderer.enabled = false;
@@ -136,7 +146,7 @@ public class DungeonPlayerController : MonoBehaviour
 
     void UpdateSwordSwing()
     {
-        if (swordRenderer == null) return;
+        if (swordRenderer == null || swordPivot == null) return;
         if (swingTimer <= 0f)
         {
             swordRenderer.enabled = false;
@@ -145,11 +155,12 @@ public class DungeonPlayerController : MonoBehaviour
 
         swingTimer -= Time.deltaTime;
         float progress = 1f - Mathf.Clamp01(swingTimer / Mathf.Max(0.01f, swordSwingDuration));
+        // Rotate the sword's pivot around the player, not the sword around its own centre.
+        float easedProgress = Mathf.SmoothStep(0f, 1f, progress);
         float facingAngle = Mathf.Atan2(facingDirection.y, facingDirection.x) * Mathf.Rad2Deg;
-        float arcAngle = Mathf.Lerp(-115f, 115f, progress);
+        float swingAngle = Mathf.Lerp(-105f, 105f, easedProgress);
+        swordPivot.localRotation = Quaternion.Euler(0f, 0f, facingAngle + swingAngle);
         swordRenderer.enabled = true;
-        swordRenderer.transform.localPosition = (Vector3)(facingDirection * 0.72f);
-        swordRenderer.transform.localRotation = Quaternion.Euler(0f, 0f, facingAngle + arcAngle - 90f);
     }
 
     void OnDrawGizmosSelected()
