@@ -188,6 +188,113 @@ public class DungeonTaleGame : MonoBehaviour
         CreateLevelUpPanel(canvas.transform);
     }
     
+
+    void CreateExperienceBar(Transform parent)
+    {
+        var bg = new GameObject("Experience Bar Background", typeof(RectTransform), typeof(Image));
+        bg.transform.SetParent(parent, false);
+        var r = bg.GetComponent<RectTransform>();
+        r.anchorMin = new Vector2(0, 1); r.anchorMax = new Vector2(0, 1); r.pivot = new Vector2(0, 1);
+        r.anchoredPosition = new Vector2(24, -108); r.sizeDelta = new Vector2(300, 18);
+        var image = bg.GetComponent<Image>(); image.sprite = uiWhiteSprite;
+        image.color = new Color(0.035f, 0.04f, 0.055f, 0.98f); image.raycastTarget = false;
+        var fill = new GameObject("Experience Bar Fill", typeof(RectTransform), typeof(Image));
+        fill.transform.SetParent(bg.transform, false);
+        experienceFillRect = fill.GetComponent<RectTransform>();
+        experienceFillRect.anchorMin = Vector2.zero; experienceFillRect.anchorMax = new Vector2(0, 1);
+        experienceFillRect.pivot = new Vector2(0, 0.5f); experienceFillRect.anchoredPosition = new Vector2(3, 0);
+        experienceFillRect.sizeDelta = new Vector2(294, -6);
+        experienceFill = fill.GetComponent<Image>(); experienceFill.sprite = uiWhiteSprite;
+        experienceFill.color = new Color(0.25f, 0.65f, 1f, 1f); experienceFill.raycastTarget = false;
+        experienceLabel = MakeText(parent, "Experience Label", new Vector2(336, -103), new Vector2(260, 28), 18, TextAnchor.UpperLeft);
+        experienceLabel.fontStyle = FontStyle.Bold;
+    }
+
+    void CreateLevelUpPanel(Transform parent)
+    {
+        levelUpPanel = new GameObject("Level Up Choice Panel", typeof(RectTransform), typeof(Image));
+        levelUpPanel.transform.SetParent(parent, false);
+        var pr = levelUpPanel.GetComponent<RectTransform>();
+        pr.anchorMin = new Vector2(0.5f, 0.5f); pr.anchorMax = new Vector2(0.5f, 0.5f);
+        pr.pivot = new Vector2(0.5f, 0.5f); pr.anchoredPosition = Vector2.zero; pr.sizeDelta = new Vector2(1120, 430);
+        var panelImage = levelUpPanel.GetComponent<Image>(); panelImage.sprite = uiWhiteSprite;
+        panelImage.color = new Color(0.025f, 0.07f, 0.12f, 0.98f); panelImage.raycastTarget = true;
+        var heading = MakeCenteredText(levelUpPanel.transform, "Level Up Heading", new Vector2(0, 165),
+            new Vector2(1000, 72), 42, FontStyle.Bold);
+        heading.text = "LEVEL UP!  CHOOSE ONE UPGRADE"; heading.color = new Color(0.45f, 0.9f, 1f, 1f);
+        string[] titles = { "POWER", "SPEED", "CRITICAL STRIKE" };
+        string[] descriptions = { "Increase sword damage by +1.", "Move faster by +0.6.",
+            "Gain +10% critical chance. Critical hits deal double damage." };
+        for (int i = 0; i < 3; i++)
+        {
+            int choice = i;
+            var card = new GameObject(titles[i] + " Card", typeof(RectTransform), typeof(Image), typeof(Button));
+            card.transform.SetParent(levelUpPanel.transform, false);
+            var cr = card.GetComponent<RectTransform>();
+            cr.anchorMin = new Vector2(0.5f, 0.5f); cr.anchorMax = new Vector2(0.5f, 0.5f);
+            cr.pivot = new Vector2(0.5f, 0.5f); cr.anchoredPosition = new Vector2((i - 1) * 350, -25);
+            cr.sizeDelta = new Vector2(310, 250);
+            var ci = card.GetComponent<Image>(); ci.sprite = uiWhiteSprite;
+            ci.color = i == 0 ? new Color(0.45f, 0.16f, 0.13f) :
+                       i == 1 ? new Color(0.12f, 0.3f, 0.48f) : new Color(0.34f, 0.19f, 0.48f);
+            var button = card.GetComponent<Button>();
+            var colors = button.colors; colors.normalColor = ci.color;
+            colors.highlightedColor = new Color(0.55f, 0.65f, 0.78f, 1f);
+            colors.pressedColor = new Color(0.75f, 0.8f, 0.9f, 1f); button.colors = colors;
+            button.onClick.AddListener(() => ChooseUpgrade(choice));
+            var title = MakeCenteredText(card.transform, "Card Title", new Vector2(0, 55),
+                new Vector2(280, 70), 28, FontStyle.Bold); title.text = titles[i];
+            var desc = MakeCenteredText(card.transform, "Card Description", new Vector2(0, -35),
+                new Vector2(270, 100), 20, FontStyle.Normal); desc.text = descriptions[i];
+        }
+        levelUpPanel.SetActive(false);
+    }
+
+    void ShowLevelUpChoice()
+    {
+        if (upgradeChoiceOpen || levelUpPanel == null) return;
+        upgradeChoiceOpen = true;
+        levelUpPanel.SetActive(true);
+        UpdateHud();
+    }
+
+    void ChooseUpgrade(int choice)
+    {
+        if (!upgradeChoiceOpen) return;
+        if (choice == 0) { attackPower++; ShowMessage("POWER UP! Sword damage increased."); }
+        else if (choice == 1) { playerSpeedBonus += 0.6f; ShowMessage("SPEED UP! You move faster."); }
+        else { criticalChance = Mathf.Min(0.75f, criticalChance + 0.10f); ShowMessage("CRITICAL STRIKE! Critical chance increased."); }
+        upgradeChoiceOpen = false;
+        levelUpPanel.SetActive(false);
+        UpdateHud();
+        if (experience >= experienceToNextLevel)
+        {
+            experience -= experienceToNextLevel; playerLevel++;
+            experienceToNextLevel = 100 + (playerLevel - 1) * 50;
+            ShowLevelUpChoice();
+        }
+    }
+
+    void AddExperience(int amount)
+    {
+        experience += amount;
+        if (experience >= experienceToNextLevel)
+        {
+            experience -= experienceToNextLevel; playerLevel++;
+            experienceToNextLevel = 100 + (playerLevel - 1) * 50;
+            ShowLevelUpChoice();
+        }
+        UpdateHud();
+    }
+
+    public float GetPlayerMoveSpeed(float baseSpeed) { return baseSpeed + playerSpeedBonus; }
+    public int RollPlayerAttackDamage()
+    {
+        bool critical = Random.value < criticalChance;
+        if (critical) ShowMessage("CRITICAL HIT!");
+        return attackPower * (critical ? 2 : 1);
+    }
+
     void CreateLevelClearBanner(Transform parent)
     {
         levelClearBanner = new GameObject("Level Clear Banner", typeof(RectTransform), typeof(Image));
