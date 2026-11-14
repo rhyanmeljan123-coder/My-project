@@ -191,7 +191,7 @@ public class DungeonTaleGame : MonoBehaviour
         rect.anchoredPosition = position;
         rect.sizeDelta = size;
         var label = go.GetComponent<Text>();
-        label.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         label.fontSize = fontSize;
         label.fontStyle = style;
         label.color = Color.white;
@@ -275,7 +275,7 @@ public class DungeonTaleGame : MonoBehaviour
 
     Text MakeText(Transform parent,string n,Vector2 pos,Vector2 size,int fs,TextAnchor align){
         var g=new GameObject(n);g.transform.SetParent(parent,false);var rt=g.AddComponent<RectTransform>();rt.anchorMin=new Vector2(0,1);rt.anchorMax=new Vector2(0,1);rt.pivot=new Vector2(0,1);rt.anchoredPosition=pos;rt.sizeDelta=size;
-        var t=g.AddComponent<Text>();t.font=Resources.GetBuiltinResource<Font>("Arial.ttf");t.fontSize=fs;t.color=Color.white;t.alignment=align;t.horizontalOverflow=HorizontalWrapMode.Overflow;return t;
+        var t=g.AddComponent<Text>();t.font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");t.fontSize=fs;t.color=Color.white;t.alignment=align;t.horizontalOverflow=HorizontalWrapMode.Overflow;return t;
     }
     void CreateHealthBar(Transform parent)
     {
