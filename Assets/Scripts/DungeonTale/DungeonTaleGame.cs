@@ -41,6 +41,8 @@ public class DungeonTaleGame : MonoBehaviour
     private GameObject screenOverlay;
     private Text overlayTitle, overlaySubtitle;
     private Button primaryOverlayButton, secondaryOverlayButton;
+    private GameObject levelClearBanner;
+    private Text levelClearTitle, levelClearSubtitle;
 
     void Start() {
         CreatePlayer(); DecorateDungeon(); CreateEnemies(); CreatePickups(); CreateTraps(); CreateExit(); CreateUI(); UpdateHud();
@@ -172,8 +174,33 @@ public class DungeonTaleGame : MonoBehaviour
         message.rectTransform.anchorMin=new Vector2(.5f,0);message.rectTransform.anchorMax=new Vector2(.5f,0);
         message.text="WASD / Arrows: Move     SPACE: Attack     E: Use potion";
         CreateGameOverlay(canvas.transform);
+        CreateLevelClearBanner(canvas.transform);
     }
     
+    void CreateLevelClearBanner(Transform parent)
+    {
+        levelClearBanner = new GameObject("Level Clear Banner", typeof(RectTransform), typeof(Image));
+        levelClearBanner.transform.SetParent(parent, false);
+        var bannerRect = levelClearBanner.GetComponent<RectTransform>();
+        bannerRect.anchorMin = new Vector2(0.5f, 0.5f);
+        bannerRect.anchorMax = new Vector2(0.5f, 0.5f);
+        bannerRect.pivot = new Vector2(0.5f, 0.5f);
+        bannerRect.anchoredPosition = Vector2.zero;
+        bannerRect.sizeDelta = new Vector2(620, 190);
+        var bannerImage = levelClearBanner.GetComponent<Image>();
+        bannerImage.color = new Color(0.025f, 0.12f, 0.16f, 0.96f);
+        bannerImage.raycastTarget = false;
+
+        levelClearTitle = MakeCenteredText(levelClearBanner.transform, "Level Clear Title",
+            new Vector2(0, 42), new Vector2(580, 76), 48, FontStyle.Bold);
+        levelClearTitle.color = new Color(0.35f, 1f, 0.72f, 1f);
+        levelClearTitle.text = "LEVEL 1 CLEAR!";
+        levelClearSubtitle = MakeCenteredText(levelClearBanner.transform, "Level Clear Subtitle",
+            new Vector2(0, -35), new Vector2(560, 52), 22, FontStyle.Normal);
+        levelClearSubtitle.text = "All monsters defeated! Enter the portal to continue.";
+        levelClearBanner.SetActive(false);
+    }
+
     void CreateGameOverlay(Transform parent)
     {
         screenOverlay = new GameObject("Game Screen Overlay", typeof(RectTransform), typeof(Image));
@@ -354,7 +381,13 @@ public class DungeonTaleGame : MonoBehaviour
         UpdateHud();
         if (enemiesRemaining == 0)
         {
-            ShowMessage("LEVEL " + dungeonLevel + " CLEAR! A portal to the next dungeon has appeared!");
+            ShowMessage("LEVEL " + dungeonLevel + " CLEAR! Enter the portal to continue.");
+            if (levelClearBanner != null)
+            {
+                levelClearTitle.text = "LEVEL " + dungeonLevel + " CLEAR!";
+                levelClearSubtitle.text = "All monsters defeated! Enter the portal to continue.";
+                levelClearBanner.SetActive(true);
+            }
             SpawnNextDungeonPortal();
         }
     }
@@ -380,6 +413,7 @@ public class DungeonTaleGame : MonoBehaviour
         if (finished || enemiesRemaining > 0) return;
 
         dungeonLevel++;
+        if (levelClearBanner != null) levelClearBanner.SetActive(false);
         if (nextDungeonPortal != null) Destroy(nextDungeonPortal);
         nextDungeonPortal = null;
 
