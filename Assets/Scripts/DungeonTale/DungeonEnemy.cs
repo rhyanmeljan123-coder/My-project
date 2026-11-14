@@ -13,10 +13,11 @@ public class DungeonEnemy : MonoBehaviour
     private Color visualBaseColor = Color.white;
     private Rigidbody2D body;
     private bool isAttacking;
+    private bool attackDamagePending;
     private float attackAnimationTime;
     private Vector2 attackDirection = Vector2.down;
     private const float AttackCooldown = 1.1f;
-    private const float AttackDuration = 0.34f;
+    private const float AttackDuration = 0.42f;
     private Vector2 moveDirection;
     private readonly List<Vector2> path = new List<Vector2>();
     private float nextPathRefresh;
@@ -116,8 +117,8 @@ public class DungeonEnemy : MonoBehaviour
         if (contactDistance > 1.15f) return;
 
         BeginAttackAnimation();
+        attackDamagePending = true;
         nextAttackTime = Time.time + AttackCooldown;
-        game.DamagePlayer();
     }
 
     void BeginAttackAnimation()
@@ -125,6 +126,7 @@ public class DungeonEnemy : MonoBehaviour
         Vector2 toPlayer = (Vector2)target.position - body.position;
         attackDirection = toPlayer.sqrMagnitude > 0.001f ? toPlayer.normalized : Vector2.down;
         attackAnimationTime = 0f;
+        attackDamagePending = false;
         isAttacking = true;
     }
 
@@ -137,20 +139,27 @@ public class DungeonEnemy : MonoBehaviour
         float lunge;
 
         // Brief wind-up, quick forward strike, then a smooth return to idle.
-        if (t < 0.25f)
+        if (t < 0.28f)
         {
-            float phase = Mathf.SmoothStep(0f, 1f, t / 0.25f);
+            float phase = Mathf.SmoothStep(0f, 1f, t / 0.28f);
             lunge = Mathf.Lerp(0f, -0.08f, phase);
         }
-        else if (t < 0.52f)
+        else if (t < 0.58f)
         {
-            float phase = Mathf.SmoothStep(0f, 1f, (t - 0.25f) / 0.27f);
+            float phase = Mathf.SmoothStep(0f, 1f, (t - 0.28f) / 0.30f);
             lunge = Mathf.Lerp(-0.08f, 0.22f, phase);
         }
         else
         {
-            float phase = Mathf.SmoothStep(0f, 1f, (t - 0.52f) / 0.48f);
+            float phase = Mathf.SmoothStep(0f, 1f, (t - 0.58f) / 0.42f);
             lunge = Mathf.Lerp(0.22f, 0f, phase);
+        }
+
+        // Apply damage on the strike beat, not when the wind-up begins.
+        if (attackDamagePending && t >= 0.58f)
+        {
+            attackDamagePending = false;
+            if (game != null && !game.IsFinished()) game.DamagePlayer();
         }
 
         float squash = Mathf.Sin(t * Mathf.PI);
@@ -178,6 +187,7 @@ public class DungeonEnemy : MonoBehaviour
     void FinishAttackAnimation()
     {
         isAttacking = false;
+        attackDamagePending = false;
         attackAnimationTime = 0f;
         if (visualTransform != null)
         {
