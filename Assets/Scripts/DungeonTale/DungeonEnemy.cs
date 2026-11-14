@@ -6,6 +6,10 @@ public class DungeonEnemy : MonoBehaviour
     private float nextAttackTime;
     private int health = 2;
     private int maxHealth = 2;
+    [Header("Monster Rewards")]
+    public int xpReward = 20;
+    [Range(0f, 1f)] public float coinDropChance = 0.3f;
+    [Range(0f, 1f)] public float potionDropChance = 0.1f;
     private SpriteRenderer spriteRenderer;
     private Transform visualTransform;
     private Vector3 visualBaseLocalPosition;
@@ -315,7 +319,7 @@ public class DungeonEnemy : MonoBehaviour
         health -= Mathf.Max(1, damage);
         if (health <= 0)
         {
-            game.EnemyDefeated();
+            game.EnemyDefeated(xpReward, transform.position, coinDropChance, potionDropChance);
             Destroy(gameObject);
         }
         else
