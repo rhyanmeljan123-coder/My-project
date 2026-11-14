@@ -53,6 +53,17 @@ public class DungeonPlayerController : MonoBehaviour
         walkSprites = game.GetCharacterWalkFrames(game.selectedCharacter);
         currentWalkFrames = game.selectedCharacter == 0 ? game.walkDownFrames : walkSprites;
         spriteRenderer.flipX = false;
+
+        // Normalize the new pack's 100x100 sprites to the current hero's
+        // visible world height so every playable character has the same size.
+        Sprite referenceSprite = game.playerIdleSprite != null ? game.playerIdleSprite : game.heroSprite;
+        if (referenceSprite != null && idleSprite != null &&
+            referenceSprite.bounds.size.y > 0.001f && idleSprite.bounds.size.y > 0.001f)
+        {
+            float sizeRatio = referenceSprite.bounds.size.y / idleSprite.bounds.size.y;
+            transform.localScale = Vector3.one * sizeRatio;
+        }
+
         if (idleSprite != null) spriteRenderer.sprite = idleSprite;
     }
 
