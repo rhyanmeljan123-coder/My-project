@@ -110,6 +110,11 @@ public class DungeonEnemy : MonoBehaviour
         Transform other = collision.gameObject != null ? collision.gameObject.transform : null;
         if (other == null || (other != target && !other.IsChildOf(target))) return;
 
+        // Require the player to be physically touching and very close to the
+        // monster's root. This prevents damage from stray/oversized colliders.
+        float contactDistance = Vector2.Distance(body.position, target.position);
+        if (contactDistance > 1.15f) return;
+
         BeginAttackAnimation();
         nextAttackTime = Time.time + AttackCooldown;
         game.DamagePlayer();
