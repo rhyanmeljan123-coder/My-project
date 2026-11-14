@@ -6,10 +6,24 @@ public class DungeonEnemy : MonoBehaviour
     private int health = 2;
     private int maxHealth = 2;
     private SpriteRenderer spriteRenderer;
+    private Rigidbody2D body;
+    private Vector2 moveDirection;
 
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        body = GetComponent<Rigidbody2D>();
+        if (body == null) body = gameObject.AddComponent<Rigidbody2D>();
+        body.bodyType = RigidbodyType2D.Dynamic;
+        body.gravityScale = 0f;
+        body.freezeRotation = true;
+        body.constraints = RigidbodyConstraints2D.FreezeRotation;
+        body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        body.interpolation = RigidbodyInterpolation2D.Interpolate;
+
+        // Enemies must use solid colliders. Trigger colliders do not stop at walls.
+        var collider = GetComponent<Collider2D>();
+        if (collider != null) collider.isTrigger = false;
     }
 
     public void SetHealth(int value)
@@ -17,11 +31,30 @@ public class DungeonEnemy : MonoBehaviour
         maxHealth = Mathf.Max(1, value);
         health = maxHealth;
     }
-    void Update(){
-        if(target==null||game==null||game.IsFinished())return;
-        float d=Vector2.Distance(transform.position,target.position);
-        if(d>0.8f)transform.position=Vector2.MoveTowards(transform.position,target.position,speed*Time.deltaTime);
-        else if(Time.time>=attackTimer){attackTimer=Time.time+1.1f;game.DamagePlayer();}
+    void Update()
+    {
+        moveDirection = Vector2.zero;
+        if (target == null || game == null || game.IsFinished()) return;
+
+        float distance = Vector2.Distance(transform.position, target.position);
+        if (distance > 0.8f)
+        {
+            moveDirection = ((Vector2)target.position - body.position).normalized;
+        }
+        else if (Time.time >= attackTimer)
+        {
+            attackTimer = Time.time + 1.1f;
+            game.DamagePlayer();
+        }
+    }
+
+    void FixedUpdate()
+    {
+        if (body == null || moveDirection.sqrMagnitude < 0.001f) return;
+
+        // Rigidbody movement respects the solid TilemapCollider2D walls.
+        Vector2 nextPosition = body.position + moveDirection * speed * Time.fixedDeltaTime;
+        body.MovePosition(nextPosition);
     }
     public void TakeHit()
     {
