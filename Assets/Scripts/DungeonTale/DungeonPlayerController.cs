@@ -233,23 +233,10 @@ public class DungeonPlayerController : MonoBehaviour
             return;
         }
 
-        // The Soldier/Orc sheets face right. Mirror for left and rotate the
-        // visual direction for up/down so movement and sword swings face correctly.
-        spriteRenderer.flipX = false;
-        float angle = 0f;
-        if (facingDirection == Vector2.left)
-        {
-            spriteRenderer.flipX = true;
-        }
-        else if (facingDirection == Vector2.up)
-        {
-            angle = 90f;
-        }
-        else if (facingDirection == Vector2.down)
-        {
-            angle = -90f;
-        }
-        transform.rotation = Quaternion.Euler(0f, 0f, angle);
+        // Keep the character upright. The Tiny RPG Soldier/Orc sheets are
+        // side-facing animations, so only mirror the sprite for left-facing movement.
+        transform.rotation = Quaternion.identity;
+        spriteRenderer.flipX = facingDirection == Vector2.left;
     }
 
     void RestoreMovementSprite()
