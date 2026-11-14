@@ -259,7 +259,7 @@ public class DungeonTaleGame : MonoBehaviour
         pr.pivot = new Vector2(0.5f, 0.5f); pr.anchoredPosition = Vector2.zero; pr.sizeDelta = new Vector2(1180, 460);
         var panelImage = levelUpPanel.GetComponent<Image>(); panelImage.sprite = uiWhiteSprite;
         panelImage.color = new Color(0.025f, 0.07f, 0.12f, 0.99f); panelImage.raycastTarget = true;
-        var heading = MakeCenteredText(levelUpPanel.transform, "Level Up Heading", new Vector2(0, 165),
+        var heading = MakeCenteredText(levelUpPanel.transform, "Level Up Heading", new Vector2(0, 175),
             new Vector2(1080, 70), 38, FontStyle.Bold);
         heading.text = "LEVEL UP!  CHOOSE ONE UPGRADE"; heading.color = new Color(0.45f, 0.9f, 1f, 1f); heading.raycastTarget = false;
 
@@ -386,19 +386,19 @@ public class DungeonTaleGame : MonoBehaviour
             symbol.color = accent;
             symbol.raycastTarget = false;
 
-            var title = MakeCenteredText(inner.transform, "Card Title", new Vector2(0, -92),
+            var title = MakeCenteredText(inner.transform, "Card Title", new Vector2(0, 25),
                 new Vector2(310, 36), 22, FontStyle.Bold);
             title.text = titles[choice];
             title.color = Color.white;
             title.raycastTarget = false;
 
-            var stat = MakeCenteredText(inner.transform, "Upgrade Stat", new Vector2(0, -128),
+            var stat = MakeCenteredText(inner.transform, "Upgrade Stat", new Vector2(0, -10),
                 new Vector2(300, 28), 15, FontStyle.Bold);
             stat.text = statLabels[choice];
             stat.color = accent;
             stat.raycastTarget = false;
 
-            var desc = MakeCenteredText(inner.transform, "Card Description", new Vector2(0, -171),
+            var desc = MakeCenteredText(inner.transform, "Card Description", new Vector2(0, -54),
                 new Vector2(300, 48), 15, FontStyle.Normal);
             desc.text = descriptions[choice];
             desc.color = new Color(0.78f, 0.84f, 0.92f, 1f);
