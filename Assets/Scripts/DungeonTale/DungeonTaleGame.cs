@@ -490,6 +490,8 @@ public class DungeonTaleGame : MonoBehaviour
                                new Color(0.15f, 0.85f, 0.28f);
         }
         if (healthLabel) healthLabel.text = $"HEALTH  {playerHealth}/{maxHealth}";
+        if (experienceFillRect) experienceFillRect.sizeDelta = new Vector2(294f * Mathf.Clamp01((float)experience / Mathf.Max(1, experienceToNextLevel)), -6f);
+        if (experienceLabel) experienceLabel.text = "LV " + playerLevel + "   XP " + experience + "/" + experienceToNextLevel;
     }
     public void ShowMessage(string s){if(message)message.text=s;}
     public void DamagePlayer(){if(finished||Time.time<invulnerableUntil)return;invulnerableUntil=Time.time+0.8f;playerHealth--;UpdateHud();if(playerHealth<=0){finished=true;ShowEndScreen(false);}}
@@ -497,6 +499,7 @@ public class DungeonTaleGame : MonoBehaviour
     {
         enemiesRemaining = Mathf.Max(0, enemiesRemaining - 1);
         UpdateHud();
+        AddExperience(25);
         if (enemiesRemaining == 0)
         {
             ShowMessage("LEVEL " + dungeonLevel + " CLEAR! Enter the portal to continue.");
@@ -533,6 +536,7 @@ public class DungeonTaleGame : MonoBehaviour
 
         dungeonLevel++;
         if (levelClearBanner != null) levelClearBanner.SetActive(false);
+        if (levelUpPanel != null) levelUpPanel.SetActive(false);
         if (nextDungeonPortal != null) Destroy(nextDungeonPortal);
         nextDungeonPortal = null;
 
@@ -690,7 +694,7 @@ public class DungeonTaleGame : MonoBehaviour
         if (!gameStarted || Keyboard.current == null) return;
         if (Keyboard.current.eKey.wasPressedThisFrame) UsePotion();
     }
-    public bool IsFinished(){return finished || !gameStarted;}
+    public bool IsFinished(){return finished || !gameStarted || upgradeChoiceOpen;}
 
 
 
