@@ -98,7 +98,13 @@ public class DungeonTaleGame : MonoBehaviour
     GameObject MakePickup(string n,Sprite s,Vector2 p,float size){var g=new GameObject(n);dungeonObjects.Add(g);g.transform.position=p;g.transform.localScale=Vector3.one*size;var r=g.AddComponent<SpriteRenderer>();r.sprite=s;r.sortingOrder=7;return g;}
     void MakeItem(string n,Sprite s,Vector2 p,float size){if(!s)return;var g=MakePickup(n,s,p,size);g.AddComponent<CircleCollider2D>().isTrigger=true;g.AddComponent<DungeonItemPickup>().game=this;}
     void CreateTraps() {
-        Vector2[] positions={new(-6,2),new(-6,3),new(6,-2),new(6,-3),new(11,0),new(-11,0)};
+        // Spread hazards around the room so they read as separate obstacles,
+        // rather than pairs of tiny decorations.
+        Vector2[] positions = {
+            new Vector2(-7, 3), new Vector2(6, -3),
+            new Vector2(11, 0), new Vector2(-11, 0),
+            new Vector2(0, 8), new Vector2(0, -8)
+        };
         Sprite trapArt = packSpikeSprite ? packSpikeSprite : spikeSprite;
         if (!trapArt) {
             Debug.LogWarning("Dungeon Tale: No spike sprite was found. Check the packSpikeSprite assignment in DungeonTaleBootstrap.");
@@ -106,15 +112,24 @@ public class DungeonTaleGame : MonoBehaviour
         }
 
         foreach (var p in positions) {
-            // The imported pack spikes are 16x16 sprites at 100 PPU.
-            // Scale them to approximately one Unity tile so they are visible.
-            var g = MakePickup("Spike Trap", trapArt, p, 6f);
+            // Dark warning plate makes the silver spikes stand out against stone.
+            var plate = new GameObject("Spike Trap Warning Plate");
+            dungeonObjects.Add(plate);
+            plate.transform.position = new Vector3(p.x, p.y, 0.1f);
+            plate.transform.localScale = new Vector3(0.9f, 0.9f, 1f);
+            var plateRenderer = plate.AddComponent<SpriteRenderer>();
+            plateRenderer.sprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f));
+            plateRenderer.color = new Color(0.32f, 0.055f, 0.045f, 0.9f);
+            plateRenderer.sortingOrder = 10;
+
+            var g = MakePickup("Spike Trap", trapArt, p, 7f);
+            g.transform.position = new Vector3(p.x, p.y, 0f);
             var sr = g.GetComponent<SpriteRenderer>();
             if (sr) sr.sortingOrder = 12;
 
             var hitbox = g.AddComponent<BoxCollider2D>();
             hitbox.isTrigger = true;
-            hitbox.size = new Vector2(0.16f, 0.16f);
+            hitbox.size = new Vector2(0.7f, 0.7f);
 
             g.AddComponent<DungeonSpike>().game = this;
         }
@@ -502,34 +517,6 @@ public class DungeonTaleGame : MonoBehaviour
     void Update(){if(!gameStarted || Keyboard.current==null)return;if(Keyboard.current.eKey.wasPressedThisFrame)UsePotion();}
     public bool IsFinished(){return finished || !gameStarted;}
 
-    // Fallback HUD drawn directly by Unity's IMGUI system. This remains visible
-    // even if the runtime Canvas/UI font setup fails in a project version.
-    void OnGUI()
-    {
-        const float x = 18f;
-        const float y = 18f;
-        const float barWidth = 250f;
-        const float barHeight = 24f;
 
-        GUI.color = new Color(0.02f, 0.025f, 0.035f, 0.95f);
-        GUI.Box(new Rect(x, y, barWidth + 16f, 58f), GUIContent.none);
-
-        GUI.color = Color.white;
-        GUI.Label(new Rect(x + 8f, y + 3f, barWidth, 20f),
-            "HEALTH  " + playerHealth + " / " + maxHealth);
-
-        GUI.color = new Color(0.12f, 0.14f, 0.17f, 1f);
-        GUI.Box(new Rect(x + 8f, y + 27f, barWidth, barHeight), GUIContent.none);
-
-        float ratio = maxHealth > 0 ? Mathf.Clamp01((float)playerHealth / maxHealth) : 0f;
-        GUI.color = playerHealth <= 2 ? new Color(0.95f, 0.12f, 0.1f) :
-                    playerHealth <= 4 ? new Color(1f, 0.62f, 0.08f) :
-                    new Color(0.15f, 0.85f, 0.28f);
-        GUI.DrawTexture(new Rect(x + 11f, y + 30f, (barWidth - 6f) * ratio, barHeight - 6f), Texture2D.whiteTexture);
-
-        GUI.color = Color.white;
-        GUI.Label(new Rect(x + 8f, y + 62f, 520f, 26f),
-            "GOLD: " + coins + "     POTIONS: " + potions + "     MONSTERS: " + enemiesRemaining);
-    }
 
 }
