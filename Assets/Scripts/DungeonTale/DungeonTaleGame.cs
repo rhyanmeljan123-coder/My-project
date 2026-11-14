@@ -807,55 +807,6 @@ public class DungeonTaleGame : MonoBehaviour
         return button;
     }
 
-    void ShowMainMenu()
-    {
-        gameStarted = false;
-        if (screenOverlay == null) return;
-        screenOverlay.SetActive(true);
-        overlayTitle.text = "DUNGEON TALE";
-        overlaySubtitle.text = "Explore dangerous dungeons, defeat monsters, collect treasure, and survive!";
-        primaryOverlayButton.gameObject.SetActive(true);
-        secondaryOverlayButton.gameObject.SetActive(false);
-        primaryOverlayButton.GetComponentInChildren<Text>().text = "START GAME";
-        primaryOverlayButton.onClick.RemoveAllListeners();
-        primaryOverlayButton.onClick.AddListener(StartGame);
-    }
-
-    void StartGame()
-    {
-        gameStarted = true;
-        if (screenOverlay != null) screenOverlay.SetActive(false);
-        ShowMessage("Defeat every monster, collect the key, and reach the exit!");
-    }
-
-    void ShowEndScreen(bool won)
-    {
-        gameStarted = false;
-        if (screenOverlay == null) return;
-        screenOverlay.SetActive(true);
-        overlayTitle.text = won ? "DUNGEON CLEARED!" : "GAME OVER";
-        overlaySubtitle.text = won
-            ? "You escaped the dungeon! Gold collected: " + coins + "    Dungeon reached: " + dungeonLevel
-            : "Your adventure has ended. Gold collected: " + coins + "    Dungeon reached: " + dungeonLevel;
-        primaryOverlayButton.gameObject.SetActive(true);
-        secondaryOverlayButton.gameObject.SetActive(true);
-        primaryOverlayButton.GetComponentInChildren<Text>().text = "PLAY AGAIN";
-        primaryOverlayButton.onClick.RemoveAllListeners();
-        primaryOverlayButton.onClick.AddListener(RestartGame);
-        secondaryOverlayButton.onClick.RemoveAllListeners();
-        secondaryOverlayButton.onClick.AddListener(ReturnToMainMenu);
-    }
-
-    void RestartGame()
-    {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-    }
-
-    void ReturnToMainMenu()
-    {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-    }
-
     Text MakeText(Transform parent,string n,Vector2 pos,Vector2 size,int fs,TextAnchor align){
         var g=new GameObject(n);g.transform.SetParent(parent,false);var rt=g.AddComponent<RectTransform>();rt.anchorMin=new Vector2(0,1);rt.anchorMax=new Vector2(0,1);rt.pivot=new Vector2(0,1);rt.anchoredPosition=pos;rt.sizeDelta=size;
         var t=g.AddComponent<Text>();t.font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");t.fontSize=fs;t.color=Color.white;t.alignment=align;t.horizontalOverflow=HorizontalWrapMode.Overflow;return t;
