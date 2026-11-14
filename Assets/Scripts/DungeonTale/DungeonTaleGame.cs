@@ -100,7 +100,14 @@ public class DungeonTaleGame : MonoBehaviour
 
         var collider = e.AddComponent<CircleCollider2D>();
         collider.isTrigger=false;
-        var brain=e.AddComponent<DungeonEnemy>();brain.game=this;brain.target=player;brain.speed=speed;brain.SetHealth(hp);
+        var brain=e.AddComponent<DungeonEnemy>();
+        brain.game=this; brain.target=player; brain.speed=speed; brain.SetHealth(hp);
+        // Different monster families reward different XP and have different loot odds.
+        if (sprite == skeletonSprite) { brain.xpReward = 35; brain.coinDropChance = 0.45f; brain.potionDropChance = 0.18f; }
+        else if (sprite == batSprite) { brain.xpReward = 25; brain.coinDropChance = 0.32f; brain.potionDropChance = 0.12f; }
+        else if (sprite == ratSprite) { brain.xpReward = 15; brain.coinDropChance = 0.25f; brain.potionDropChance = 0.08f; }
+        else { brain.xpReward = 20; brain.coinDropChance = 0.30f; brain.potionDropChance = 0.10f; }
+        brain.xpReward += Mathf.Max(0, dungeonLevel - 1) * 3;
     }
     void CreatePickups() {
         Vector2[] coinsAt={new(-11,5),new(-5,9),new(5,9),new(12,5),new(-11,-5),new(-4,-9),new(4,-9),new(12,-5)};
@@ -495,11 +502,29 @@ public class DungeonTaleGame : MonoBehaviour
     }
     public void ShowMessage(string s){if(message)message.text=s;}
     public void DamagePlayer(){if(finished||Time.time<invulnerableUntil)return;invulnerableUntil=Time.time+0.8f;playerHealth--;UpdateHud();if(playerHealth<=0){finished=true;ShowEndScreen(false);}}
-    public void EnemyDefeated()
+    public void EnemyDefeated(int xpReward, Vector2 dropPosition, float coinChance, float potionChance)
     {
         enemiesRemaining = Mathf.Max(0, enemiesRemaining - 1);
         UpdateHud();
-        AddExperience(25);
+        AddExperience(xpReward);
+        // Roll one drop per defeated monster. Potions are rarer than coins.
+        float dropRoll = Random.value;
+        if (dropRoll < potionChance && (packFlaskSprite || potionRed))
+        {
+            Sprite potionArt = packFlaskSprite ? packFlaskSprite : potionRed;
+            var potionDrop = MakePickup("Monster Potion Drop", potionArt, dropPosition + Random.insideUnitCircle * 0.35f, 0.85f);
+            potionDrop.AddComponent<CircleCollider2D>().isTrigger = true;
+            potionDrop.AddComponent<DungeonItemPickup>().game = this;
+            ShowMessage("Rare drop! A healing potion appeared.");
+        }
+        else if (dropRoll < potionChance + coinChance && (packCoinSprite || coinSprite))
+        {
+            var coinDrop = MakePickup("Monster Gold", packCoinSprite ? packCoinSprite : coinSprite,
+                dropPosition + Random.insideUnitCircle * 0.35f, 0.75f);
+            coinDrop.AddComponent<CircleCollider2D>().isTrigger = true;
+            coinDrop.AddComponent<DungeonCoin>().game = this;
+            ShowMessage("Monster dropped gold!");
+        }
         if (enemiesRemaining == 0)
         {
             ShowMessage("LEVEL " + dungeonLevel + " CLEAR! Enter the portal to continue.");
