@@ -35,9 +35,14 @@ public class DungeonTaleGame : MonoBehaviour
     private int dungeonLevel = 1;
     private GameObject nextDungeonPortal;
     private float invulnerableUntil;
+    private bool gameStarted;
+    private GameObject screenOverlay;
+    private Text overlayTitle, overlaySubtitle;
+    private Button primaryOverlayButton, secondaryOverlayButton;
 
     void Start() {
         CreatePlayer(); DecorateDungeon(); CreateEnemies(); CreatePickups(); CreateTraps(); CreateExit(); CreateUI(); UpdateHud();
+        ShowMainMenu();
     }
     void CreatePlayer() {
         var go = new GameObject("Player - Hero");
@@ -134,7 +139,131 @@ public class DungeonTaleGame : MonoBehaviour
         message=MakeText(canvas.transform,"Message",new Vector2(0,18),new Vector2(850,54),20,TextAnchor.LowerCenter);
         message.rectTransform.anchorMin=new Vector2(.5f,0);message.rectTransform.anchorMax=new Vector2(.5f,0);
         message.text="WASD / Arrows: Move     SPACE: Attack     E: Use potion";
+        CreateGameOverlay(canvas.transform);
     }
+    
+    void CreateGameOverlay(Transform parent)
+    {
+        screenOverlay = new GameObject("Game Screen Overlay", typeof(RectTransform), typeof(Image));
+        screenOverlay.transform.SetParent(parent, false);
+        var overlayRect = screenOverlay.GetComponent<RectTransform>();
+        overlayRect.anchorMin = Vector2.zero;
+        overlayRect.anchorMax = Vector2.one;
+        overlayRect.offsetMin = Vector2.zero;
+        overlayRect.offsetMax = Vector2.zero;
+        var overlayImage = screenOverlay.GetComponent<Image>();
+        overlayImage.color = new Color(0.015f, 0.025f, 0.05f, 0.94f);
+        overlayImage.raycastTarget = true;
+
+        var panel = new GameObject("Menu Panel", typeof(RectTransform), typeof(Image));
+        panel.transform.SetParent(screenOverlay.transform, false);
+        var panelRect = panel.GetComponent<RectTransform>();
+        panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+        panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+        panelRect.pivot = new Vector2(0.5f, 0.5f);
+        panelRect.anchoredPosition = Vector2.zero;
+        panelRect.sizeDelta = new Vector2(620, 390);
+        panel.GetComponent<Image>().color = new Color(0.055f, 0.085f, 0.13f, 0.98f);
+
+        overlayTitle = MakeCenteredText(panel.transform, "Screen Title", new Vector2(0, 105), new Vector2(560, 80), 42, FontStyle.Bold);
+        overlaySubtitle = MakeCenteredText(panel.transform, "Screen Description", new Vector2(0, 35), new Vector2(540, 70), 19, FontStyle.Normal);
+        primaryOverlayButton = MakeOverlayButton(panel.transform, "Primary Action", new Vector2(0, -65), "START GAME");
+        secondaryOverlayButton = MakeOverlayButton(panel.transform, "Secondary Action", new Vector2(0, -145), "MAIN MENU");
+    }
+
+    Text MakeCenteredText(Transform parent, string objectName, Vector2 position, Vector2 size, int fontSize, FontStyle style)
+    {
+        var go = new GameObject(objectName, typeof(RectTransform), typeof(Text));
+        go.transform.SetParent(parent, false);
+        var rect = go.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = size;
+        var label = go.GetComponent<Text>();
+        label.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        label.fontSize = fontSize;
+        label.fontStyle = style;
+        label.color = Color.white;
+        label.alignment = TextAnchor.MiddleCenter;
+        label.horizontalOverflow = HorizontalWrapMode.Wrap;
+        label.verticalOverflow = VerticalWrapMode.Overflow;
+        return label;
+    }
+
+    Button MakeOverlayButton(Transform parent, string objectName, Vector2 position, string caption)
+    {
+        var go = new GameObject(objectName, typeof(RectTransform), typeof(Image), typeof(Button));
+        go.transform.SetParent(parent, false);
+        var rect = go.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = new Vector2(260, 58);
+        var image = go.GetComponent<Image>();
+        image.color = new Color(0.12f, 0.48f, 0.72f, 1f);
+        var button = go.GetComponent<Button>();
+        var colors = button.colors;
+        colors.normalColor = new Color(0.12f, 0.48f, 0.72f, 1f);
+        colors.highlightedColor = new Color(0.2f, 0.62f, 0.88f, 1f);
+        colors.pressedColor = new Color(0.07f, 0.32f, 0.52f, 1f);
+        button.colors = colors;
+        var label = MakeCenteredText(go.transform, "Button Label", Vector2.zero, new Vector2(250, 54), 21, FontStyle.Bold);
+        label.text = caption;
+        return button;
+    }
+
+    void ShowMainMenu()
+    {
+        gameStarted = false;
+        if (screenOverlay == null) return;
+        screenOverlay.SetActive(true);
+        overlayTitle.text = "DUNGEON TALE";
+        overlaySubtitle.text = "Explore dangerous dungeons, defeat monsters, collect treasure, and survive!";
+        primaryOverlayButton.gameObject.SetActive(true);
+        secondaryOverlayButton.gameObject.SetActive(false);
+        primaryOverlayButton.GetComponentInChildren<Text>().text = "START GAME";
+        primaryOverlayButton.onClick.RemoveAllListeners();
+        primaryOverlayButton.onClick.AddListener(StartGame);
+    }
+
+    void StartGame()
+    {
+        gameStarted = true;
+        if (screenOverlay != null) screenOverlay.SetActive(false);
+        ShowMessage("Defeat every monster, collect the key, and reach the exit!");
+    }
+
+    void ShowEndScreen(bool won)
+    {
+        gameStarted = false;
+        if (screenOverlay == null) return;
+        screenOverlay.SetActive(true);
+        overlayTitle.text = won ? "DUNGEON CLEARED!" : "GAME OVER";
+        overlaySubtitle.text = won
+            ? "You escaped the dungeon! Gold collected: " + coins + "    Dungeon reached: " + dungeonLevel
+            : "Your adventure has ended. Gold collected: " + coins + "    Dungeon reached: " + dungeonLevel;
+        primaryOverlayButton.gameObject.SetActive(true);
+        secondaryOverlayButton.gameObject.SetActive(true);
+        primaryOverlayButton.GetComponentInChildren<Text>().text = "PLAY AGAIN";
+        primaryOverlayButton.onClick.RemoveAllListeners();
+        primaryOverlayButton.onClick.AddListener(RestartGame);
+        secondaryOverlayButton.onClick.RemoveAllListeners();
+        secondaryOverlayButton.onClick.AddListener(ReturnToMainMenu);
+    }
+
+    void RestartGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    void ReturnToMainMenu()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
     Text MakeText(Transform parent,string n,Vector2 pos,Vector2 size,int fs,TextAnchor align){
         var g=new GameObject(n);g.transform.SetParent(parent,false);var rt=g.AddComponent<RectTransform>();rt.anchorMin=new Vector2(0,1);rt.anchorMax=new Vector2(0,1);rt.pivot=new Vector2(0,1);rt.anchoredPosition=pos;rt.sizeDelta=size;
         var t=g.AddComponent<Text>();t.font=Resources.GetBuiltinResource<Font>("Arial.ttf");t.fontSize=fs;t.color=Color.white;t.alignment=align;t.horizontalOverflow=HorizontalWrapMode.Overflow;return t;
@@ -174,7 +303,7 @@ public class DungeonTaleGame : MonoBehaviour
 
     public void UpdateHud()
     {
-        if (hud) hud.text = $"DUNGEON TALE     GOLD: {coins}     POTIONS: {potions}     MONSTERS: {enemiesRemaining}";
+        if (hud) hud.text = $"DUNGEON TALE     LEVEL: {dungeonLevel}     GOLD: {coins}     POTIONS: {potions}     MONSTERS: {enemiesRemaining}";
         float healthRatio = maxHealth > 0 ? Mathf.Clamp01((float)playerHealth / maxHealth) : 0f;
         if (healthFillRect) healthFillRect.sizeDelta = new Vector2(292f * healthRatio, -8f);
         if (healthFill)
@@ -186,7 +315,7 @@ public class DungeonTaleGame : MonoBehaviour
         if (healthLabel) healthLabel.text = $"HEALTH  {playerHealth}/{maxHealth}";
     }
     public void ShowMessage(string s){if(message)message.text=s;}
-    public void DamagePlayer(){if(finished||Time.time<invulnerableUntil)return;invulnerableUntil=Time.time+0.8f;playerHealth--;UpdateHud();if(playerHealth<=0){finished=true;ShowMessage("YOU WERE DEFEATED - Press R to restart");}}
+    public void DamagePlayer(){if(finished||Time.time<invulnerableUntil)return;invulnerableUntil=Time.time+0.8f;playerHealth--;UpdateHud();if(playerHealth<=0){finished=true;ShowEndScreen(false);}}
     public void EnemyDefeated()
     {
         enemiesRemaining = Mathf.Max(0, enemiesRemaining - 1);
@@ -360,9 +489,9 @@ public class DungeonTaleGame : MonoBehaviour
     public void CollectItem(string item){if(item=="Dungeon Key"){hasKey=true;ShowMessage("Dungeon key collected! The exit is unlocked.");}else if(item.Contains("Potion")){potions++;ShowMessage("Potion collected. Press E to restore health.");}UpdateHud();}
     public void UsePotion(){if(potions<=0||playerHealth>=maxHealth)return;potions--;playerHealth=Mathf.Min(maxHealth,playerHealth+3);UpdateHud();ShowMessage("Potion used. Health restored.");}
     public void HitTrap(){DamagePlayer();}
-    public void ReachExit(){if(enemiesRemaining>0){ShowMessage("Defeat every monster first!");return;}if(!hasKey){ShowMessage("The exit is locked. Find the dungeon key!");return;}finished=true;ShowMessage("DUNGEON CLEARED! Gold: "+coins+" - Press R to play again");}
-    void Update(){if(Keyboard.current==null)return;if(Keyboard.current.eKey.wasPressedThisFrame)UsePotion();if(finished&&Keyboard.current.rKey.wasPressedThisFrame)SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);}
-    public bool IsFinished(){return finished;}
+    public void ReachExit(){if(enemiesRemaining>0){ShowMessage("Defeat every monster first!");return;}if(!hasKey){ShowMessage("The exit is locked. Find the dungeon key!");return;}finished=true;ShowEndScreen(true);}
+    void Update(){if(!gameStarted || Keyboard.current==null)return;if(Keyboard.current.eKey.wasPressedThisFrame)UsePotion();}
+    public bool IsFinished(){return finished || !gameStarted;}
 
     // Fallback HUD drawn directly by Unity's IMGUI system. This remains visible
     // even if the runtime Canvas/UI font setup fails in a project version.
