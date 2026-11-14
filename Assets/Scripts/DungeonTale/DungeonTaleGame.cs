@@ -20,6 +20,10 @@ public class DungeonTaleGame : MonoBehaviour
     public Sprite[] heroWalkFrames;
     public Sprite[] walkDownFrames, walkLeftFrames, walkRightFrames, walkUpFrames;
     public Sprite[] attackDownFrames, attackLeftFrames, attackRightFrames, attackUpFrames;
+    [Header("Playable Characters")]
+    public Sprite soldierIdleSprite, orcIdleSprite;
+    public Sprite[] soldierWalkFrames, orcWalkFrames;
+    [HideInInspector] public int selectedCharacter;
     public Sprite slimeSprite, skeletonSprite, batSprite, ratSprite, coinSprite, torchSprite, spikeSprite, doorSprite;
     [Header("2D Pixel Dungeon Pack")]
     public Sprite packChestSprite, packTorchSprite, packSpikeSprite, packCoinSprite, packFlaskSprite;
@@ -41,6 +45,14 @@ public class DungeonTaleGame : MonoBehaviour
     private GameObject screenOverlay;
     private Text overlayTitle, overlaySubtitle;
     private Button primaryOverlayButton, secondaryOverlayButton;
+    private GameObject menuPanel, characterPanel, settingsPanel, endPanel;
+    private Text endTitle, endSubtitle, characterSelectionLabel, qualityLabel, fullscreenLabel;
+    private Button continueButton, qualityButton, fullscreenButton;
+    private Slider masterVolumeSlider;
+    private readonly Button[] characterButtons = new Button[3];
+    private bool hasSavedGame;
+    private float nextAutosave;
+    private const string SavePrefix = "DungeonTale_";
     private GameObject levelClearBanner;
     private Text levelClearTitle, levelClearSubtitle;
     private float levelClearBannerHideAt = -1f;
@@ -64,13 +76,15 @@ public class DungeonTaleGame : MonoBehaviour
     private bool healthRegenEnabled;
 
     void Start() {
+        hasSavedGame = PlayerPrefs.GetInt(SavePrefix + "HasSave", 0) == 1;
+        selectedCharacter = Mathf.Clamp(PlayerPrefs.GetInt(SavePrefix + "Character", 0), 0, 2);
         CreatePlayer(); DecorateDungeon(); CreateEnemies(); CreatePickups(); CreateTraps(); CreateExit(); CreateUI(); UpdateHud();
         ShowMainMenu();
     }
     void CreatePlayer() {
         var go = new GameObject("Player - Hero");
         go.transform.position = new Vector3(-14,0,0);
-        var sr=go.AddComponent<SpriteRenderer>(); sr.sprite=heroSprite; sr.sortingOrder=10;
+        var sr=go.AddComponent<SpriteRenderer>(); sr.sprite=GetCharacterIdleSprite(selectedCharacter); sr.sortingOrder=10;
         var rb=go.AddComponent<Rigidbody2D>(); rb.gravityScale=0; rb.freezeRotation=true; rb.interpolation=RigidbodyInterpolation2D.Interpolate;
         go.AddComponent<CapsuleCollider2D>();
         var controller=go.AddComponent<DungeonPlayerController>(); controller.game=this;
@@ -394,34 +408,339 @@ public class DungeonTaleGame : MonoBehaviour
         levelClearBanner.SetActive(false);
     }
 
+    GameObject CreateOverlayPanel(Transform parent, string objectName, Vector2 size)
+    {
+        var panel = new GameObject(objectName, typeof(RectTransform), typeof(Image));
+        panel.transform.SetParent(parent, false);
+        var rect = panel.GetComponent<RectTransform>();
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = Vector2.zero;
+        rect.sizeDelta = size;
+        panel.GetComponent<Image>().color = new Color(0.055f, 0.085f, 0.13f, 0.98f);
+        return panel;
+    }
+
     void CreateGameOverlay(Transform parent)
     {
         screenOverlay = new GameObject("Game Screen Overlay", typeof(RectTransform), typeof(Image));
         screenOverlay.transform.SetParent(parent, false);
         var overlayRect = screenOverlay.GetComponent<RectTransform>();
-        overlayRect.anchorMin = Vector2.zero;
-        overlayRect.anchorMax = Vector2.one;
-        overlayRect.offsetMin = Vector2.zero;
-        overlayRect.offsetMax = Vector2.zero;
+        overlayRect.anchorMin = Vector2.zero; overlayRect.anchorMax = Vector2.one;
+        overlayRect.offsetMin = Vector2.zero; overlayRect.offsetMax = Vector2.zero;
         var overlayImage = screenOverlay.GetComponent<Image>();
-        overlayImage.color = new Color(0.015f, 0.025f, 0.05f, 0.94f);
+        overlayImage.color = new Color(0.015f, 0.025f, 0.05f, 0.96f);
         overlayImage.raycastTarget = true;
 
-        var panel = new GameObject("Menu Panel", typeof(RectTransform), typeof(Image));
-        panel.transform.SetParent(screenOverlay.transform, false);
-        var panelRect = panel.GetComponent<RectTransform>();
-        panelRect.anchorMin = new Vector2(0.5f, 0.5f);
-        panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-        panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.anchoredPosition = Vector2.zero;
-        panelRect.sizeDelta = new Vector2(620, 390);
-        panel.GetComponent<Image>().color = new Color(0.055f, 0.085f, 0.13f, 0.98f);
+        menuPanel = CreateOverlayPanel(screenOverlay.transform, "Main Menu Panel", new Vector2(620, 700));
+        overlayTitle = MakeCenteredText(menuPanel.transform, "Screen Title", new Vector2(0, 275), new Vector2(560, 80), 48, FontStyle.Bold);
+        overlaySubtitle = MakeCenteredText(menuPanel.transform, "Screen Description", new Vector2(0, 205), new Vector2(540, 55), 18, FontStyle.Normal);
+        MakeMenuButton(menuPanel.transform, "Start Game", 105, StartNewGame);
+        continueButton = MakeMenuButton(menuPanel.transform, "Continue", 25, ContinueGame);
+        MakeMenuButton(menuPanel.transform, "Choose Character", -55, ShowCharacterSelection);
+        MakeMenuButton(menuPanel.transform, "Settings", -135, ShowSettings);
+        MakeMenuButton(menuPanel.transform, "Exit Game", -215, ExitGame);
 
-        overlayTitle = MakeCenteredText(panel.transform, "Screen Title", new Vector2(0, 105), new Vector2(560, 80), 42, FontStyle.Bold);
-        overlaySubtitle = MakeCenteredText(panel.transform, "Screen Description", new Vector2(0, 35), new Vector2(540, 70), 19, FontStyle.Normal);
-        primaryOverlayButton = MakeOverlayButton(panel.transform, "Primary Action", new Vector2(0, -65), "START GAME");
-        secondaryOverlayButton = MakeOverlayButton(panel.transform, "Secondary Action", new Vector2(0, -145), "MAIN MENU");
+        characterPanel = CreateOverlayPanel(screenOverlay.transform, "Choose Character Panel", new Vector2(850, 560));
+        MakeCenteredText(characterPanel.transform, "Character Screen Title", new Vector2(0, 220), new Vector2(760, 65), 38, FontStyle.Bold).text = "CHOOSE YOUR CHARACTER";
+        characterSelectionLabel = MakeCenteredText(characterPanel.transform, "Character Selected", new Vector2(0, -155), new Vector2(760, 42), 20, FontStyle.Bold);
+        string[] characterNames = { "CURRENT HERO", "SOLDIER", "ORC" };
+        Sprite[] previews = { playerIdleSprite ? playerIdleSprite : heroSprite, soldierIdleSprite, orcIdleSprite };
+        for (int i = 0; i < 3; i++)
+        {
+            int characterIndex = i;
+            var card = new GameObject(characterNames[i] + " Choice", typeof(RectTransform), typeof(Image), typeof(Button));
+            card.transform.SetParent(characterPanel.transform, false);
+            var rect = card.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2((i - 1) * 260, 15);
+            rect.sizeDelta = new Vector2(220, 280);
+            card.GetComponent<Image>().sprite = uiWhiteSprite;
+            card.GetComponent<Image>().color = new Color(0.12f, 0.2f, 0.29f, 1f);
+            var button = card.GetComponent<Button>();
+            button.onClick.AddListener(() => SelectCharacter(characterIndex));
+            characterButtons[i] = button;
+            var portrait = new GameObject("Character Preview", typeof(RectTransform), typeof(Image));
+            portrait.transform.SetParent(card.transform, false);
+            var pr = portrait.GetComponent<RectTransform>();
+            pr.anchorMin = pr.anchorMax = new Vector2(0.5f, 0.5f);
+            pr.pivot = new Vector2(0.5f, 0.5f);
+            pr.anchoredPosition = new Vector2(0, 35);
+            pr.sizeDelta = new Vector2(125, 125);
+            var portraitImage = portrait.GetComponent<Image>();
+            portraitImage.sprite = previews[i];
+            portraitImage.preserveAspect = true;
+            portraitImage.color = previews[i] ? Color.white : new Color(1f, 1f, 1f, 0f);
+            var name = MakeCenteredText(card.transform, "Character Name", new Vector2(0, -105), new Vector2(200, 45), 22, FontStyle.Bold);
+            name.text = characterNames[i];
+        }
+        MakeMenuButton(characterPanel.transform, "Back", -225, ShowMainMenu);
+        characterPanel.SetActive(false);
+
+        settingsPanel = CreateOverlayPanel(screenOverlay.transform, "Settings Panel", new Vector2(700, 560));
+        MakeCenteredText(settingsPanel.transform, "Settings Title", new Vector2(0, 220), new Vector2(620, 60), 40, FontStyle.Bold).text = "SETTINGS";
+        MakeCenteredText(settingsPanel.transform, "Master Volume Label", new Vector2(0, 135), new Vector2(520, 35), 22, FontStyle.Bold).text = "MASTER AUDIO VOLUME";
+        var sliderObject = new GameObject("Master Volume Slider", typeof(RectTransform), typeof(Slider));
+        sliderObject.transform.SetParent(settingsPanel.transform, false);
+        var sliderRect = sliderObject.GetComponent<RectTransform>();
+        sliderRect.anchorMin = sliderRect.anchorMax = new Vector2(0.5f, 0.5f);
+        sliderRect.pivot = new Vector2(0.5f, 0.5f);
+        sliderRect.anchoredPosition = new Vector2(0, 85);
+        sliderRect.sizeDelta = new Vector2(430, 28);
+        var track = new GameObject("Track", typeof(RectTransform), typeof(Image));
+        track.transform.SetParent(sliderObject.transform, false);
+        var tr = track.GetComponent<RectTransform>();
+        tr.anchorMin = Vector2.zero; tr.anchorMax = Vector2.one; tr.offsetMin = Vector2.zero; tr.offsetMax = Vector2.zero;
+        track.GetComponent<Image>().color = new Color(0.16f, 0.22f, 0.3f, 1f);
+        var fillArea = new GameObject("Fill Area", typeof(RectTransform));
+        fillArea.transform.SetParent(sliderObject.transform, false);
+        var far = fillArea.GetComponent<RectTransform>();
+        far.anchorMin = new Vector2(0, 0.25f); far.anchorMax = new Vector2(1, 0.75f); far.offsetMin = new Vector2(4, 0); far.offsetMax = new Vector2(-4, 0);
+        var fill = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+        fill.transform.SetParent(fillArea.transform, false);
+        fill.GetComponent<Image>().color = new Color(0.2f, 0.75f, 0.95f, 1f);
+        var fr = fill.GetComponent<RectTransform>(); fr.anchorMin = Vector2.zero; fr.anchorMax = Vector2.one; fr.offsetMin = Vector2.zero; fr.offsetMax = Vector2.zero;
+        var handleArea = new GameObject("Handle Slide Area", typeof(RectTransform));
+        handleArea.transform.SetParent(sliderObject.transform, false);
+        var har = handleArea.GetComponent<RectTransform>();
+        har.anchorMin = Vector2.zero; har.anchorMax = Vector2.one; har.offsetMin = new Vector2(8, 0); har.offsetMax = new Vector2(-8, 0);
+        var handle = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+        handle.transform.SetParent(handleArea.transform, false);
+        var hr = handle.GetComponent<RectTransform>();
+        hr.sizeDelta = new Vector2(22, 32);
+        handle.GetComponent<Image>().color = Color.white;
+        masterVolumeSlider = sliderObject.GetComponent<Slider>();
+        masterVolumeSlider.fillRect = fr; masterVolumeSlider.handleRect = hr;
+        masterVolumeSlider.targetGraphic = handle.GetComponent<Image>();
+        masterVolumeSlider.minValue = 0f; masterVolumeSlider.maxValue = 1f;
+        masterVolumeSlider.value = PlayerPrefs.GetFloat(SavePrefix + "Volume", 1f);
+        masterVolumeSlider.onValueChanged.AddListener(value => { AudioListener.volume = value; PlayerPrefs.SetFloat(SavePrefix + "Volume", value); });
+        qualityButton = MakeMenuButton(settingsPanel.transform, "Graphics Quality", 5, CycleGraphicsQuality);
+        qualityLabel = qualityButton.GetComponentInChildren<Text>();
+        fullscreenButton = MakeMenuButton(settingsPanel.transform, "Fullscreen", -75, ToggleFullscreen);
+        fullscreenLabel = fullscreenButton.GetComponentInChildren<Text>();
+        MakeMenuButton(settingsPanel.transform, "Back", -190, ShowMainMenu);
+        settingsPanel.SetActive(false);
+
+        endPanel = CreateOverlayPanel(screenOverlay.transform, "End Screen Panel", new Vector2(620, 440));
+        endTitle = MakeCenteredText(endPanel.transform, "End Screen Title", new Vector2(0, 125), new Vector2(560, 80), 42, FontStyle.Bold);
+        endSubtitle = MakeCenteredText(endPanel.transform, "End Screen Description", new Vector2(0, 35), new Vector2(540, 90), 18, FontStyle.Normal);
+        primaryOverlayButton = MakeOverlayButton(endPanel.transform, "Primary Action", new Vector2(0, -85), "PLAY AGAIN");
+        secondaryOverlayButton = MakeOverlayButton(endPanel.transform, "Secondary Action", new Vector2(0, -165), "MAIN MENU");
+        endPanel.SetActive(false);
     }
+
+    Button MakeMenuButton(Transform parent, string caption, float y, UnityEngine.Events.UnityAction action)
+    {
+        var button = MakeOverlayButton(parent, caption + " Button", new Vector2(0, y), caption);
+        button.onClick.AddListener(action);
+        return button;
+    }
+
+    void ShowCharacterSelection()
+    {
+        menuPanel.SetActive(false); settingsPanel.SetActive(false); endPanel.SetActive(false);
+        characterPanel.SetActive(true);
+        UpdateCharacterSelectionUI();
+    }
+
+    void SelectCharacter(int index)
+    {
+        selectedCharacter = Mathf.Clamp(index, 0, 2);
+        PlayerPrefs.SetInt(SavePrefix + "Character", selectedCharacter);
+        PlayerPrefs.Save();
+        var controller = player != null ? player.GetComponent<DungeonPlayerController>() : null;
+        if (controller != null) controller.ApplySelectedCharacter();
+        UpdateCharacterSelectionUI();
+    }
+
+    void UpdateCharacterSelectionUI()
+    {
+        string[] names = { "CURRENT HERO", "SOLDIER", "ORC" };
+        characterSelectionLabel.text = "SELECTED: " + names[selectedCharacter];
+        for (int i = 0; i < characterButtons.Length; i++)
+        {
+            var image = characterButtons[i].GetComponent<Image>();
+            image.color = i == selectedCharacter ? new Color(0.12f, 0.48f, 0.42f, 1f) : new Color(0.12f, 0.2f, 0.29f, 1f);
+        }
+    }
+
+    void ShowSettings()
+    {
+        menuPanel.SetActive(false); characterPanel.SetActive(false); endPanel.SetActive(false);
+        settingsPanel.SetActive(true);
+        masterVolumeSlider.value = PlayerPrefs.GetFloat(SavePrefix + "Volume", AudioListener.volume);
+        UpdateSettingsLabels();
+    }
+
+    void UpdateSettingsLabels()
+    {
+        qualityLabel.text = "GRAPHICS: " + QualitySettings.names[QualitySettings.GetQualityLevel()];
+        fullscreenLabel.text = "FULLSCREEN: " + (Screen.fullScreen ? "ON" : "OFF");
+    }
+
+    void CycleGraphicsQuality()
+    {
+        int next = (QualitySettings.GetQualityLevel() + 1) % Mathf.Max(1, QualitySettings.names.Length);
+        QualitySettings.SetQualityLevel(next, true);
+        PlayerPrefs.SetInt(SavePrefix + "Quality", next);
+        UpdateSettingsLabels();
+    }
+
+    void ToggleFullscreen()
+    {
+        Screen.fullScreen = !Screen.fullScreen;
+        PlayerPrefs.SetInt(SavePrefix + "Fullscreen", Screen.fullScreen ? 1 : 0);
+        UpdateSettingsLabels();
+    }
+
+    void ExitGame()
+    {
+        SaveGameProgress();
+        Application.Quit();
+    }
+
+    public Sprite GetCharacterIdleSprite(int index)
+    {
+        if (index == 1 && soldierIdleSprite != null) return soldierIdleSprite;
+        if (index == 2 && orcIdleSprite != null) return orcIdleSprite;
+        return playerIdleSprite != null ? playerIdleSprite : heroSprite;
+    }
+
+    public Sprite[] GetCharacterWalkFrames(int index)
+    {
+        if (index == 1 && soldierWalkFrames != null && soldierWalkFrames.Length > 0) return soldierWalkFrames;
+        if (index == 2 && orcWalkFrames != null && orcWalkFrames.Length > 0) return orcWalkFrames;
+        return heroWalkFrames != null && heroWalkFrames.Length > 0 ? heroWalkFrames : walkDownFrames;
+    }
+
+    void SaveGameProgress()
+    {
+        if (!gameStarted || finished) return;
+        PlayerPrefs.SetInt(SavePrefix + "HasSave", 1);
+        PlayerPrefs.SetInt(SavePrefix + "Dungeon", dungeonLevel);
+        PlayerPrefs.SetInt(SavePrefix + "Health", playerHealth);
+        PlayerPrefs.SetInt(SavePrefix + "MaxHealth", maxHealth);
+        PlayerPrefs.SetInt(SavePrefix + "Coins", coins);
+        PlayerPrefs.SetInt(SavePrefix + "Potions", potions);
+        PlayerPrefs.SetInt(SavePrefix + "PlayerLevel", playerLevel);
+        PlayerPrefs.SetInt(SavePrefix + "XP", experience);
+        PlayerPrefs.SetInt(SavePrefix + "XPNext", experienceToNextLevel);
+        PlayerPrefs.SetInt(SavePrefix + "Attack", attackPower);
+        PlayerPrefs.SetFloat(SavePrefix + "Crit", criticalChance);
+        PlayerPrefs.SetFloat(SavePrefix + "Speed", playerSpeedBonus);
+        PlayerPrefs.SetInt(SavePrefix + "ShieldMax", maxShieldCharges);
+        PlayerPrefs.SetInt(SavePrefix + "Shield", shieldCharges);
+        PlayerPrefs.SetFloat(SavePrefix + "Dodge", dodgeChance);
+        PlayerPrefs.SetFloat(SavePrefix + "XPMultiplier", experienceGainMultiplier);
+        PlayerPrefs.SetInt(SavePrefix + "HealthRegen", healthRegenEnabled ? 1 : 0);
+        if (player != null) { PlayerPrefs.SetFloat(SavePrefix + "PlayerX", player.position.x); PlayerPrefs.SetFloat(SavePrefix + "PlayerY", player.position.y); }
+        PlayerPrefs.SetInt(SavePrefix + "Character", selectedCharacter);
+        PlayerPrefs.Save();
+        hasSavedGame = true;
+        if (continueButton != null) continueButton.interactable = true;
+    }
+
+    void ContinueGame()
+    {
+        if (!hasSavedGame) return;
+        dungeonLevel = Mathf.Max(1, PlayerPrefs.GetInt(SavePrefix + "Dungeon", 1));
+        playerHealth = PlayerPrefs.GetInt(SavePrefix + "Health", maxHealth);
+        maxHealth = PlayerPrefs.GetInt(SavePrefix + "MaxHealth", 6);
+        coins = PlayerPrefs.GetInt(SavePrefix + "Coins", 0);
+        potions = PlayerPrefs.GetInt(SavePrefix + "Potions", 0);
+        playerLevel = PlayerPrefs.GetInt(SavePrefix + "PlayerLevel", 1);
+        experience = PlayerPrefs.GetInt(SavePrefix + "XP", 0);
+        experienceToNextLevel = PlayerPrefs.GetInt(SavePrefix + "XPNext", 100);
+        attackPower = PlayerPrefs.GetInt(SavePrefix + "Attack", 1);
+        criticalChance = PlayerPrefs.GetFloat(SavePrefix + "Crit", 0.05f);
+        playerSpeedBonus = PlayerPrefs.GetFloat(SavePrefix + "Speed", 0f);
+        maxShieldCharges = PlayerPrefs.GetInt(SavePrefix + "ShieldMax", 0);
+        shieldCharges = PlayerPrefs.GetInt(SavePrefix + "Shield", 0);
+        dodgeChance = PlayerPrefs.GetFloat(SavePrefix + "Dodge", 0f);
+        experienceGainMultiplier = PlayerPrefs.GetFloat(SavePrefix + "XPMultiplier", 1f);
+        healthRegenEnabled = PlayerPrefs.GetInt(SavePrefix + "HealthRegen", 0) == 1;
+        selectedCharacter = Mathf.Clamp(PlayerPrefs.GetInt(SavePrefix + "Character", 0), 0, 2);
+        if (dungeonLevel > 1)
+        {
+            foreach (var oldObject in dungeonObjects) if (oldObject != null) Destroy(oldObject);
+            dungeonObjects.Clear();
+            BuildNextDungeonLayout(); DecorateDungeon(); CreateLevelEnemies(); CreatePickups(); CreateTraps(); CreateExit();
+        }
+        if (player != null)
+        {
+            player.position = new Vector3(PlayerPrefs.GetFloat(SavePrefix + "PlayerX", -14f), PlayerPrefs.GetFloat(SavePrefix + "PlayerY", 0f), 0f);
+            var controller = player.GetComponent<DungeonPlayerController>();
+            if (controller != null) controller.ApplySelectedCharacter();
+        }
+        UpdateHud();
+        gameStarted = true;
+        screenOverlay.SetActive(false);
+        nextAutosave = Time.time + 20f;
+        ShowMessage("CONTINUE - Your last dungeon checkpoint has been loaded.");
+    }
+
+    void StartNewGame()
+    {
+        PlayerPrefs.DeleteKey(SavePrefix + "HasSave");
+        hasSavedGame = false;
+        dungeonLevel = 1; playerHealth = maxHealth = 6; coins = potions = 0;
+        playerLevel = 1; experience = 0; experienceToNextLevel = 100; attackPower = 1;
+        criticalChance = 0.05f; playerSpeedBonus = 0f; maxShieldCharges = shieldCharges = 0;
+        dodgeChance = 0f; experienceGainMultiplier = 1f; healthRegenEnabled = false;
+        if (player != null) player.position = new Vector3(-14, 0, 0);
+        SaveNewGameCheckpoint();
+        StartGame();
+    }
+
+    void SaveNewGameCheckpoint()
+    {
+        gameStarted = true;
+        SaveGameProgress();
+        gameStarted = false;
+    }
+
+    void StartGame()
+    {
+        gameStarted = true;
+        if (screenOverlay != null) screenOverlay.SetActive(false);
+        nextAutosave = Time.time + 20f;
+        ShowMessage("Defeat every monster, collect the key, and reach the exit!");
+    }
+
+    void ShowMainMenu()
+    {
+        gameStarted = false;
+        if (screenOverlay == null) return;
+        screenOverlay.SetActive(true);
+        menuPanel.SetActive(true); characterPanel.SetActive(false); settingsPanel.SetActive(false); endPanel.SetActive(false);
+        overlayTitle.text = "DUNGEON TALE";
+        overlaySubtitle.text = "Explore dangerous dungeons, defeat monsters, collect treasure, and survive!";
+        continueButton.interactable = hasSavedGame;
+        UpdateCharacterSelectionUI();
+    }
+
+    void ShowEndScreen(bool won)
+    {
+        gameStarted = false;
+        if (screenOverlay == null) return;
+        SaveGameProgress();
+        screenOverlay.SetActive(true);
+        menuPanel.SetActive(false); characterPanel.SetActive(false); settingsPanel.SetActive(false); endPanel.SetActive(true);
+        endTitle.text = won ? "DUNGEON CLEARED!" : "GAME OVER";
+        endSubtitle.text = won
+            ? "You escaped the dungeon! Gold collected: " + coins + "    Dungeon reached: " + dungeonLevel
+            : "Your adventure has ended. Gold collected: " + coins + "    Dungeon reached: " + dungeonLevel;
+        primaryOverlayButton.GetComponentInChildren<Text>().text = "PLAY AGAIN";
+        primaryOverlayButton.onClick.RemoveAllListeners();
+        primaryOverlayButton.onClick.AddListener(StartNewGame);
+        secondaryOverlayButton.onClick.RemoveAllListeners();
+        secondaryOverlayButton.onClick.AddListener(ShowMainMenu);
+    }
+
+    void RestartGame() { StartNewGame(); }
+    void ReturnToMainMenu() { SaveGameProgress(); ShowMainMenu(); }
 
     Text MakeCenteredText(Transform parent, string objectName, Vector2 position, Vector2 size, int fontSize, FontStyle style)
     {
@@ -671,6 +990,7 @@ public class DungeonTaleGame : MonoBehaviour
 
         ShowMessage("DUNGEON " + dungeonLevel + " - " + GetDungeonName() + "!");
         UpdateHud();
+        SaveGameProgress();
     }
 
     string GetDungeonName()
@@ -799,6 +1119,11 @@ public class DungeonTaleGame : MonoBehaviour
     public void ReachExit(){if(enemiesRemaining>0){ShowMessage("Defeat every monster first!");return;}if(!hasKey){ShowMessage("The exit is locked. Find the dungeon key!");return;}finished=true;ShowEndScreen(true);}
     void Update()
     {
+        if (gameStarted && !finished && Time.time >= nextAutosave)
+        {
+            SaveGameProgress();
+            nextAutosave = Time.time + 20f;
+        }
         if (levelClearBanner != null && levelClearBanner.activeSelf && levelClearBannerHideAt >= 0f && Time.time >= levelClearBannerHideAt)
         {
             levelClearBanner.SetActive(false);
