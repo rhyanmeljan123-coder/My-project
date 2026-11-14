@@ -221,7 +221,7 @@ public class DungeonTaleGame : MonoBehaviour
         panelImage.color = new Color(0.025f, 0.07f, 0.12f, 0.98f); panelImage.raycastTarget = true;
         var heading = MakeCenteredText(levelUpPanel.transform, "Level Up Heading", new Vector2(0, 165),
             new Vector2(1000, 72), 42, FontStyle.Bold);
-        heading.text = "LEVEL UP!  CHOOSE ONE UPGRADE"; heading.color = new Color(0.45f, 0.9f, 1f, 1f);
+        heading.text = "LEVEL UP!  CHOOSE ONE UPGRADE"; heading.color = new Color(0.45f, 0.9f, 1f, 1f); heading.raycastTarget = false;
         string[] titles = { "POWER", "SPEED", "CRITICAL STRIKE" };
         string[] descriptions = { "Increase sword damage by +1.", "Move faster by +0.6.",
             "Gain +10% critical chance. Critical hits deal double damage." };
@@ -243,9 +243,9 @@ public class DungeonTaleGame : MonoBehaviour
             colors.pressedColor = new Color(0.75f, 0.8f, 0.9f, 1f); button.colors = colors;
             button.onClick.AddListener(() => ChooseUpgrade(choice));
             var title = MakeCenteredText(card.transform, "Card Title", new Vector2(0, 55),
-                new Vector2(280, 70), 28, FontStyle.Bold); title.text = titles[i];
+                new Vector2(280, 70), 28, FontStyle.Bold); title.text = titles[i]; title.raycastTarget = false;
             var desc = MakeCenteredText(card.transform, "Card Description", new Vector2(0, -35),
-                new Vector2(270, 100), 20, FontStyle.Normal); desc.text = descriptions[i];
+                new Vector2(270, 100), 20, FontStyle.Normal); desc.text = descriptions[i]; desc.raycastTarget = false;
         }
         levelUpPanel.SetActive(false);
     }
