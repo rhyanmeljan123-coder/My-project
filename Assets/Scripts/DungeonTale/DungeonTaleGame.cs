@@ -409,6 +409,11 @@ public class DungeonTaleGame : MonoBehaviour
         }
     }
 
+    public bool IsWalkableDungeonCell(Vector3Int cell)
+    {
+        return wallMap == null || !wallMap.HasTile(cell);
+    }
+
     void BuildNextDungeonLayout()
     {
         if (floorMap == null || wallMap == null || wallTile == null) return;
