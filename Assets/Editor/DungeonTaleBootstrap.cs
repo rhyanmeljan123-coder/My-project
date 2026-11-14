@@ -6,6 +6,39 @@ using UnityEngine.Tilemaps;
 public static class DungeonTaleBootstrap
 {
     const string Root = "Assets/Tileset/Dungeon Tale/Assets/";
+
+    static DungeonTaleBootstrap()
+    {
+        EditorApplication.delayCall += AutoAssignCharacterAssets;
+        EditorSceneManager.sceneOpened += OnSceneOpened;
+    }
+
+    static void OnSceneOpened(UnityEngine.SceneManagement.Scene scene, OpenSceneMode mode)
+    {
+        EditorApplication.delayCall += AutoAssignCharacterAssets;
+    }
+
+    static void AutoAssignCharacterAssets()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+        var game = UnityEngine.Object.FindObjectOfType<DungeonTaleGame>();
+        if (game == null) return;
+        AssignCharacterSprites(game);
+        if (game.soldierIdleSprite == null || game.orcIdleSprite == null)
+        {
+            Debug.LogWarning("Dungeon Tale: Soldier/Orc sprite sheets were not imported yet. Check the Tiny RPG Character Asset Pack folder is inside Assets.");
+            return;
+        }
+        EditorUtility.SetDirty(game);
+        if (game.gameObject.scene.IsValid() && game.gameObject.scene.isLoaded)
+            EditorSceneManager.SaveScene(game.gameObject.scene);
+        Debug.Log("Dungeon Tale: Soldier and Orc character sprites assigned to the open scene.");
+    }
+
+    static void AssignCharacterSprites(DungeonTaleGame game)
+    {
+        AssignCharacterSprites(game);
+    }
     [MenuItem("Dungeon Tale/Build Playable Dungeon Scene")]
     public static void Build()
     {
@@ -136,13 +169,29 @@ public static class DungeonTaleBootstrap
         var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         if (texture == null) return;
 
+        bool importerChanged = importer.textureType != TextureImporterType.Sprite;
         importer.textureType = TextureImporterType.Sprite;
-        if (importer.spriteImportMode == SpriteImportMode.Multiple) return;
 
         const int cellSize = 100;
         int columns = texture.width / cellSize;
         int rows = texture.height / cellSize;
-        if (columns * rows <= 1) return;
+        if (columns <= 0 || rows <= 0) return;
+
+        bool hasSpriteSubAssets = false;
+        foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(path))
+            if (asset is Sprite) { hasSpriteSubAssets = true; break; }
+
+        if (columns * rows == 1)
+        {
+            if (importer.spriteImportMode != SpriteImportMode.Single || importerChanged)
+            {
+                importer.spriteImportMode = SpriteImportMode.Single;
+                importer.SaveAndReimport();
+            }
+            return;
+        }
+
+        if (importer.spriteImportMode == SpriteImportMode.Multiple && hasSpriteSubAssets) return;
 
         var metadata = new System.Collections.Generic.List<SpriteMetaData>();
         string baseName = path.Substring(path.LastIndexOf('/') + 1);
