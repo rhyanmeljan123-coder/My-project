@@ -52,6 +52,15 @@ public class DungeonTaleGame : MonoBehaviour
     private Image experienceFill;
     private RectTransform experienceFillRect;
     private Text experienceLabel;
+    [Header("Survival Upgrades")]
+    private int maxShieldCharges;
+    private int shieldCharges;
+    private float shieldRegenInterval = 12f;
+    private float nextShieldRegen;
+    private float dodgeChance;
+    private float experienceGainMultiplier = 1f;
+    private float healthRegenInterval = 12f;
+    private float nextHealthRegen;
 
     void Start() {
         CreatePlayer(); DecorateDungeon(); CreateEnemies(); CreatePickups(); CreateTraps(); CreateExit(); CreateUI(); UpdateHud();
@@ -223,36 +232,52 @@ public class DungeonTaleGame : MonoBehaviour
         levelUpPanel.transform.SetParent(parent, false);
         var pr = levelUpPanel.GetComponent<RectTransform>();
         pr.anchorMin = new Vector2(0.5f, 0.5f); pr.anchorMax = new Vector2(0.5f, 0.5f);
-        pr.pivot = new Vector2(0.5f, 0.5f); pr.anchoredPosition = Vector2.zero; pr.sizeDelta = new Vector2(1120, 430);
+        pr.pivot = new Vector2(0.5f, 0.5f); pr.anchoredPosition = Vector2.zero; pr.sizeDelta = new Vector2(1180, 700);
         var panelImage = levelUpPanel.GetComponent<Image>(); panelImage.sprite = uiWhiteSprite;
-        panelImage.color = new Color(0.025f, 0.07f, 0.12f, 0.98f); panelImage.raycastTarget = true;
-        var heading = MakeCenteredText(levelUpPanel.transform, "Level Up Heading", new Vector2(0, 165),
-            new Vector2(1000, 72), 42, FontStyle.Bold);
+        panelImage.color = new Color(0.025f, 0.07f, 0.12f, 0.99f); panelImage.raycastTarget = true;
+        var heading = MakeCenteredText(levelUpPanel.transform, "Level Up Heading", new Vector2(0, 300),
+            new Vector2(1080, 70), 38, FontStyle.Bold);
         heading.text = "LEVEL UP!  CHOOSE ONE UPGRADE"; heading.color = new Color(0.45f, 0.9f, 1f, 1f); heading.raycastTarget = false;
-        string[] titles = { "POWER", "SPEED", "CRITICAL STRIKE" };
-        string[] descriptions = { "Increase sword damage by +1.", "Move faster by +0.6.",
-            "Gain +10% critical chance. Critical hits deal double damage." };
-        for (int i = 0; i < 3; i++)
+
+        string[] titles = { "POWER", "SPEED", "CRITICAL STRIKE", "VITALITY", "ENERGY SHIELD", "DODGE", "XP BOOST" };
+        string[] descriptions = {
+            "Increase sword damage by +1.",
+            "Move faster by +0.6.",
+            "Gain +10% critical chance. Critical hits deal double damage.",
+            "+2 maximum HP, heal 2 HP now, and regenerate 1 HP every 12 seconds.",
+            "Gain 1 shield charge. A shield blocks one hit and recharges every 12 seconds.",
+            "Gain +10% chance to completely avoid an incoming hit.",
+            "Earn 25% more XP from every defeated monster."
+        };
+        Color[] cardColors = {
+            new Color(0.45f, 0.16f, 0.13f), new Color(0.12f, 0.3f, 0.48f),
+            new Color(0.34f, 0.19f, 0.48f), new Color(0.12f, 0.42f, 0.28f),
+            new Color(0.08f, 0.38f, 0.48f), new Color(0.42f, 0.32f, 0.12f),
+            new Color(0.28f, 0.28f, 0.48f)
+        };
+
+        for (int i = 0; i < titles.Length; i++)
         {
             int choice = i;
+            int column = i % 3;
+            int row = i / 3;
             var card = new GameObject(titles[i] + " Card", typeof(RectTransform), typeof(Image), typeof(Button));
             card.transform.SetParent(levelUpPanel.transform, false);
             var cr = card.GetComponent<RectTransform>();
             cr.anchorMin = new Vector2(0.5f, 0.5f); cr.anchorMax = new Vector2(0.5f, 0.5f);
-            cr.pivot = new Vector2(0.5f, 0.5f); cr.anchoredPosition = new Vector2((i - 1) * 350, -25);
-            cr.sizeDelta = new Vector2(310, 250);
-            var ci = card.GetComponent<Image>(); ci.sprite = uiWhiteSprite;
-            ci.color = i == 0 ? new Color(0.45f, 0.16f, 0.13f) :
-                       i == 1 ? new Color(0.12f, 0.3f, 0.48f) : new Color(0.34f, 0.19f, 0.48f);
+            cr.pivot = new Vector2(0.5f, 0.5f);
+            cr.anchoredPosition = new Vector2((column - 1) * 370, 155 - row * 205);
+            cr.sizeDelta = new Vector2(345, 180);
+            var ci = card.GetComponent<Image>(); ci.sprite = uiWhiteSprite; ci.color = cardColors[i];
             var button = card.GetComponent<Button>();
             var colors = button.colors; colors.normalColor = ci.color;
             colors.highlightedColor = new Color(0.55f, 0.65f, 0.78f, 1f);
             colors.pressedColor = new Color(0.75f, 0.8f, 0.9f, 1f); button.colors = colors;
             button.onClick.AddListener(() => ChooseUpgrade(choice));
-            var title = MakeCenteredText(card.transform, "Card Title", new Vector2(0, 55),
-                new Vector2(280, 70), 28, FontStyle.Bold); title.text = titles[i]; title.raycastTarget = false;
-            var desc = MakeCenteredText(card.transform, "Card Description", new Vector2(0, -35),
-                new Vector2(270, 100), 20, FontStyle.Normal); desc.text = descriptions[i]; desc.raycastTarget = false;
+            var title = MakeCenteredText(card.transform, "Card Title", new Vector2(0, 48),
+                new Vector2(320, 48), 24, FontStyle.Bold); title.text = titles[i]; title.raycastTarget = false;
+            var desc = MakeCenteredText(card.transform, "Card Description", new Vector2(0, -25),
+                new Vector2(315, 105), 17, FontStyle.Normal); desc.text = descriptions[i]; desc.raycastTarget = false;
         }
         levelUpPanel.SetActive(false);
     }
@@ -268,9 +293,41 @@ public class DungeonTaleGame : MonoBehaviour
     void ChooseUpgrade(int choice)
     {
         if (!upgradeChoiceOpen) return;
-        if (choice == 0) { attackPower++; ShowMessage("POWER UP! Sword damage increased."); }
-        else if (choice == 1) { playerSpeedBonus += 0.6f; ShowMessage("SPEED UP! You move faster."); }
-        else { criticalChance = Mathf.Min(0.75f, criticalChance + 0.10f); ShowMessage("CRITICAL STRIKE! Critical chance increased."); }
+        switch (choice)
+        {
+            case 0:
+                attackPower++;
+                ShowMessage("POWER UP! Sword damage increased.");
+                break;
+            case 1:
+                playerSpeedBonus += 0.6f;
+                ShowMessage("SPEED UP! You move faster.");
+                break;
+            case 2:
+                criticalChance = Mathf.Min(0.75f, criticalChance + 0.10f);
+                ShowMessage("CRITICAL STRIKE! Critical chance increased.");
+                break;
+            case 3:
+                maxHealth += 2;
+                playerHealth = Mathf.Min(maxHealth, playerHealth + 2);
+                if (nextHealthRegen <= Time.time) nextHealthRegen = Time.time + healthRegenInterval;
+                ShowMessage("VITALITY! Maximum health increased and you recovered 2 HP.");
+                break;
+            case 4:
+                maxShieldCharges++;
+                shieldCharges = Mathf.Min(maxShieldCharges, shieldCharges + 1);
+                if (nextShieldRegen <= Time.time) nextShieldRegen = Time.time + shieldRegenInterval;
+                ShowMessage("ENERGY SHIELD! A shield charge is ready.");
+                break;
+            case 5:
+                dodgeChance = Mathf.Min(0.60f, dodgeChance + 0.10f);
+                ShowMessage("DODGE UP! Chance to avoid damage increased.");
+                break;
+            case 6:
+                experienceGainMultiplier += 0.25f;
+                ShowMessage("XP BOOST! You now earn 25% more XP.");
+                break;
+        }
         upgradeChoiceOpen = false;
         levelUpPanel.SetActive(false);
         UpdateHud();
@@ -284,7 +341,7 @@ public class DungeonTaleGame : MonoBehaviour
 
     void AddExperience(int amount)
     {
-        experience += amount;
+        experience += Mathf.Max(0, Mathf.RoundToInt(amount * experienceGainMultiplier));
         if (experience >= experienceToNextLevel)
         {
             experience -= experienceToNextLevel; playerLevel++;
@@ -496,12 +553,31 @@ public class DungeonTaleGame : MonoBehaviour
                                playerHealth <= 4 ? new Color(1f, 0.62f, 0.08f) :
                                new Color(0.15f, 0.85f, 0.28f);
         }
-        if (healthLabel) healthLabel.text = $"HEALTH  {playerHealth}/{maxHealth}";
+        if (healthLabel) healthLabel.text = maxShieldCharges > 0 ? $"HEALTH  {playerHealth}/{maxHealth}   SHIELD {shieldCharges}/{maxShieldCharges}" : $"HEALTH  {playerHealth}/{maxHealth}";
         if (experienceFillRect) experienceFillRect.sizeDelta = new Vector2(294f * Mathf.Clamp01((float)experience / Mathf.Max(1, experienceToNextLevel)), -6f);
         if (experienceLabel) experienceLabel.text = "LV " + playerLevel + "   XP " + experience + "/" + experienceToNextLevel;
     }
     public void ShowMessage(string s){if(message)message.text=s;}
-    public void DamagePlayer(){if(finished||Time.time<invulnerableUntil)return;invulnerableUntil=Time.time+0.8f;playerHealth--;UpdateHud();if(playerHealth<=0){finished=true;ShowEndScreen(false);}}
+    public void DamagePlayer()
+    {
+        if (finished || Time.time < invulnerableUntil) return;
+        invulnerableUntil = Time.time + 0.8f;
+        if (dodgeChance > 0f && Random.value < dodgeChance)
+        {
+            ShowMessage("DODGED! You avoided the attack.");
+            return;
+        }
+        if (shieldCharges > 0)
+        {
+            shieldCharges--;
+            ShowMessage("SHIELD BLOCKED THE HIT!");
+            UpdateHud();
+            return;
+        }
+        playerHealth--;
+        UpdateHud();
+        if (playerHealth <= 0) { finished = true; ShowEndScreen(false); }
+    }
     public void EnemyDefeated(int xpReward, Vector2 dropPosition, float coinChance, float potionChance)
     {
         enemiesRemaining = Mathf.Max(0, enemiesRemaining - 1);
@@ -716,6 +792,25 @@ public class DungeonTaleGame : MonoBehaviour
             levelClearBanner.SetActive(false);
             levelClearBannerHideAt = -1f;
         }
+
+        if (gameStarted && !finished && !upgradeChoiceOpen)
+        {
+            if (maxShieldCharges > 0 && shieldCharges < maxShieldCharges && Time.time >= nextShieldRegen)
+            {
+                shieldCharges++;
+                nextShieldRegen = Time.time + shieldRegenInterval;
+                ShowMessage("ENERGY SHIELD RECHARGED.");
+                UpdateHud();
+            }
+            if (maxHealth > playerHealth && nextHealthRegen > 0f && Time.time >= nextHealthRegen)
+            {
+                playerHealth = Mathf.Min(maxHealth, playerHealth + 1);
+                nextHealthRegen = playerHealth < maxHealth ? Time.time + healthRegenInterval : 0f;
+                ShowMessage("VITALITY RESTORED 1 HP.");
+                UpdateHud();
+            }
+        }
+
         if (!gameStarted || Keyboard.current == null) return;
         if (Keyboard.current.eKey.wasPressedThisFrame) UsePotion();
     }
