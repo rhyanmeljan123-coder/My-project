@@ -129,6 +129,43 @@ public static class DungeonTaleBootstrap
         return frames.Length > 0 ? frames[0] : null;
     }
 
+    static void EnsureCharacterSheetSliced(string path)
+    {
+        var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+        if (importer == null) return;
+        var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        if (texture == null) return;
+
+        importer.textureType = TextureImporterType.Sprite;
+        if (importer.spriteImportMode == SpriteImportMode.Multiple) return;
+
+        const int cellSize = 100;
+        int columns = texture.width / cellSize;
+        int rows = texture.height / cellSize;
+        if (columns * rows <= 1) return;
+
+        var metadata = new System.Collections.Generic.List<SpriteMetaData>();
+        string baseName = path.Substring(path.LastIndexOf('/') + 1);
+        int extension = baseName.LastIndexOf('.');
+        if (extension >= 0) baseName = baseName.Substring(0, extension);
+
+        for (int row = 0; row < rows; row++)
+        for (int column = 0; column < columns; column++)
+        {
+            metadata.Add(new SpriteMetaData
+            {
+                name = baseName + "_" + (row * columns + column),
+                rect = new Rect(column * cellSize, texture.height - (row + 1) * cellSize, cellSize, cellSize),
+                alignment = (int)SpriteAlignment.Center,
+                pivot = new Vector2(0.5f, 0.5f)
+            });
+        }
+
+        importer.spriteImportMode = SpriteImportMode.Multiple;
+        importer.spritesheet = metadata.ToArray();
+        importer.SaveAndReimport();
+    }
+
     static Sprite[] FindCharacterFrames(string character, string animation)
     {
         string expectedFile = character + "_" + animation + ".png";
@@ -149,6 +186,7 @@ public static class DungeonTaleBootstrap
         });
         foreach (string path in candidates)
         {
+            EnsureCharacterSheetSliced(path);
             var frames = new System.Collections.Generic.List<Sprite>();
             foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(path))
                 if (asset is Sprite sprite) frames.Add(sprite);
