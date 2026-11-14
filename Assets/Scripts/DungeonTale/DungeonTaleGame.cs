@@ -120,12 +120,14 @@ public class DungeonTaleGame : MonoBehaviour
             var plateRenderer = plate.AddComponent<SpriteRenderer>();
             plateRenderer.sprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f));
             plateRenderer.color = new Color(0.32f, 0.055f, 0.045f, 0.9f);
-            plateRenderer.sortingOrder = 10;
+            plateRenderer.sortingOrder = 7;
 
-            var g = MakePickup("Spike Trap", trapArt, p, 7f);
+            // Keep the hazard visually smaller than the hero and behind
+            // characters, so it never hides the player sprite.
+            var g = MakePickup("Spike Trap", trapArt, p, 4f);
             g.transform.position = new Vector3(p.x, p.y, 0f);
             var sr = g.GetComponent<SpriteRenderer>();
-            if (sr) sr.sortingOrder = 12;
+            if (sr) sr.sortingOrder = 8;
 
             var hitbox = g.AddComponent<BoxCollider2D>();
             hitbox.isTrigger = true;
