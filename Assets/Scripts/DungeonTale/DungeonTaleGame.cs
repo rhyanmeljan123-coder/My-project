@@ -52,7 +52,7 @@ public class DungeonTaleGame : MonoBehaviour
     private Slider masterVolumeSlider;
     private readonly Button[] characterButtons = new Button[3];
     private bool hasSavedGame;
-    private float nextAutosave;
+
     private const string SavePrefix = "DungeonTale_";
     private GameObject levelClearBanner;
     private Text levelClearTitle, levelClearSubtitle;
@@ -82,9 +82,11 @@ public class DungeonTaleGame : MonoBehaviour
         if (savedQuality >= 0 && savedQuality < QualitySettings.names.Length) QualitySettings.SetQualityLevel(savedQuality, true);
         Screen.fullScreen = PlayerPrefs.GetInt(SavePrefix + "Fullscreen", Screen.fullScreen ? 1 : 0) == 1;
         hasSavedGame = PlayerPrefs.GetInt(SavePrefix + "HasSave", 0) == 1;
+        bool launchNewGame = PlayerPrefs.GetInt(SavePrefix + "StartImmediately", 0) == 1;
+        PlayerPrefs.DeleteKey(SavePrefix + "StartImmediately");
         selectedCharacter = Mathf.Clamp(PlayerPrefs.GetInt(SavePrefix + "Character", 0), 0, 2);
         CreatePlayer(); DecorateDungeon(); CreateEnemies(); CreatePickups(); CreateTraps(); CreateExit(); CreateUI(); UpdateHud();
-        ShowMainMenu();
+        if (launchNewGame) BeginNewGame(); else ShowMainMenu();
     }
     void CreatePlayer() {
         var go = new GameObject("Player - Hero");
@@ -689,13 +691,20 @@ public class DungeonTaleGame : MonoBehaviour
         UpdateHud();
         gameStarted = true;
         screenOverlay.SetActive(false);
-        nextAutosave = Time.time + 20f;
+
         ShowMessage("CONTINUE - Your last dungeon checkpoint has been loaded.");
     }
 
     void StartNewGame()
     {
         PlayerPrefs.DeleteKey(SavePrefix + "HasSave");
+        PlayerPrefs.SetInt(SavePrefix + "StartImmediately", 1);
+        PlayerPrefs.Save();
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    void BeginNewGame()
+    {
         hasSavedGame = false;
         dungeonLevel = 1; playerHealth = maxHealth = 6; coins = potions = 0;
         playerLevel = 1; experience = 0; experienceToNextLevel = 100; attackPower = 1;
@@ -717,7 +726,7 @@ public class DungeonTaleGame : MonoBehaviour
     {
         gameStarted = true;
         if (screenOverlay != null) screenOverlay.SetActive(false);
-        nextAutosave = Time.time + 20f;
+
         ShowMessage("Defeat every monster, collect the key, and reach the exit!");
     }
 
@@ -1130,13 +1139,7 @@ public class DungeonTaleGame : MonoBehaviour
     public void HitTrap(){DamagePlayer();}
     public void ReachExit(){if(enemiesRemaining>0){ShowMessage("Defeat every monster first!");return;}if(!hasKey){ShowMessage("The exit is locked. Find the dungeon key!");return;}finished=true;ShowEndScreen(true);}
     void Update()
-    {
-        if (gameStarted && !finished && Time.time >= nextAutosave)
-        {
-            SaveGameProgress();
-            nextAutosave = Time.time + 20f;
-        }
-        if (levelClearBanner != null && levelClearBanner.activeSelf && levelClearBannerHideAt >= 0f && Time.time >= levelClearBannerHideAt)
+    {if (levelClearBanner != null && levelClearBanner.activeSelf && levelClearBannerHideAt >= 0f && Time.time >= levelClearBannerHideAt)
         {
             levelClearBanner.SetActive(false);
             levelClearBannerHideAt = -1f;
