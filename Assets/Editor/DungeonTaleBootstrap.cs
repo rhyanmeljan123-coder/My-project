@@ -152,7 +152,12 @@ public static class DungeonTaleBootstrap
             var frames = new System.Collections.Generic.List<Sprite>();
             foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(path))
                 if (asset is Sprite sprite) frames.Add(sprite);
-            frames.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+            if (frames.Count == 0)
+            {
+                var singleSprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                if (singleSprite != null) frames.Add(singleSprite);
+            }
+            frames.Sort((a, b) => EditorUtility.NaturalCompare(a.name, b.name));
             if (frames.Count > 0) return frames.ToArray();
         }
         return new Sprite[0];
