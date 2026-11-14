@@ -354,7 +354,7 @@ public class DungeonTaleGame : MonoBehaviour
         UpdateHud();
         if (enemiesRemaining == 0)
         {
-            ShowMessage("DUNGEON CLEARED! A portal to the next dungeon has appeared!");
+            ShowMessage("LEVEL " + dungeonLevel + " CLEAR! A portal to the next dungeon has appeared!");
             SpawnNextDungeonPortal();
         }
     }
