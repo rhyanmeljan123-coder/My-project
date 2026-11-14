@@ -310,9 +310,9 @@ public class DungeonEnemy : MonoBehaviour
         for (int i = 1; i < cells.Count; i++)
             path.Add(game.wallMap.GetCellCenterWorld(cells[i]));
     }
-    public void TakeHit()
+    public void TakeHit(int damage)
     {
-        health--;
+        health -= Mathf.Max(1, damage);
         if (health <= 0)
         {
             game.EnemyDefeated();
