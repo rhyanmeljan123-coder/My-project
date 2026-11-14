@@ -43,12 +43,17 @@ public class DungeonPlayerController : MonoBehaviour
 
     void Start()
     {
-        if (game != null)
-        {
-            idleSprite = game.playerIdleSprite != null ? game.playerIdleSprite : idleSprite;
-            currentWalkFrames = game.walkDownFrames;
-        }
-        if (spriteRenderer != null && idleSprite != null) spriteRenderer.sprite = idleSprite;
+        ApplySelectedCharacter();
+    }
+
+    public void ApplySelectedCharacter()
+    {
+        if (game == null || spriteRenderer == null) return;
+        idleSprite = game.GetCharacterIdleSprite(game.selectedCharacter);
+        walkSprites = game.GetCharacterWalkFrames(game.selectedCharacter);
+        currentWalkFrames = game.selectedCharacter == 0 ? game.walkDownFrames : walkSprites;
+        spriteRenderer.flipX = false;
+        if (idleSprite != null) spriteRenderer.sprite = idleSprite;
     }
 
     void Update()
@@ -106,7 +111,12 @@ public class DungeonPlayerController : MonoBehaviour
         if (game == null) return;
 
         // Each direction has its own short swing sequence on the imported sheet.
-        if (Mathf.Abs(facingDirection.x) > Mathf.Abs(facingDirection.y))
+        if (game.selectedCharacter != 0)
+        {
+            currentAttackFrames = game.GetCharacterAttackFrames(game.selectedCharacter);
+            attackFlipX = false;
+        }
+        else if (Mathf.Abs(facingDirection.x) > Mathf.Abs(facingDirection.y))
         {
             // The sheet contains a right-facing horizontal swing. Mirror it for A/left.
             currentAttackFrames = game.attackRightFrames;
@@ -140,6 +150,11 @@ public class DungeonPlayerController : MonoBehaviour
     void SelectWalkDirection()
     {
         if (game == null) return;
+        if (game.selectedCharacter != 0)
+        {
+            currentWalkFrames = game.GetCharacterWalkFrames(game.selectedCharacter);
+            return;
+        }
         if (Mathf.Abs(movement.x) > Mathf.Abs(movement.y))
             currentWalkFrames = movement.x < 0 ? game.walkLeftFrames : game.walkRightFrames;
         else if (movement.y > 0.01f)
