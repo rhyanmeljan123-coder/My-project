@@ -23,6 +23,7 @@ public class DungeonTaleGame : MonoBehaviour
     [Header("Playable Characters")]
     public Sprite soldierIdleSprite, orcIdleSprite;
     public Sprite[] soldierWalkFrames, orcWalkFrames;
+    public Sprite[] soldierAttackFrames, orcAttackFrames;
     [HideInInspector] public int selectedCharacter;
     public Sprite slimeSprite, skeletonSprite, batSprite, ratSprite, coinSprite, torchSprite, spikeSprite, doorSprite;
     [Header("2D Pixel Dungeon Pack")]
@@ -76,6 +77,10 @@ public class DungeonTaleGame : MonoBehaviour
     private bool healthRegenEnabled;
 
     void Start() {
+        AudioListener.volume = PlayerPrefs.GetFloat(SavePrefix + "Volume", 1f);
+        int savedQuality = PlayerPrefs.GetInt(SavePrefix + "Quality", QualitySettings.GetQualityLevel());
+        if (savedQuality >= 0 && savedQuality < QualitySettings.names.Length) QualitySettings.SetQualityLevel(savedQuality, true);
+        Screen.fullScreen = PlayerPrefs.GetInt(SavePrefix + "Fullscreen", Screen.fullScreen ? 1 : 0) == 1;
         hasSavedGame = PlayerPrefs.GetInt(SavePrefix + "HasSave", 0) == 1;
         selectedCharacter = Mathf.Clamp(PlayerPrefs.GetInt(SavePrefix + "Character", 0), 0, 2);
         CreatePlayer(); DecorateDungeon(); CreateEnemies(); CreatePickups(); CreateTraps(); CreateExit(); CreateUI(); UpdateHud();
@@ -606,6 +611,13 @@ public class DungeonTaleGame : MonoBehaviour
         if (index == 1 && soldierIdleSprite != null) return soldierIdleSprite;
         if (index == 2 && orcIdleSprite != null) return orcIdleSprite;
         return playerIdleSprite != null ? playerIdleSprite : heroSprite;
+    }
+
+    public Sprite[] GetCharacterAttackFrames(int index)
+    {
+        if (index == 1 && soldierAttackFrames != null && soldierAttackFrames.Length > 0) return soldierAttackFrames;
+        if (index == 2 && orcAttackFrames != null && orcAttackFrames.Length > 0) return orcAttackFrames;
+        return attackRightFrames;
     }
 
     public Sprite[] GetCharacterWalkFrames(int index)
