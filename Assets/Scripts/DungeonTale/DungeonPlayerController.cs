@@ -53,6 +53,7 @@ public class DungeonPlayerController : MonoBehaviour
         walkSprites = game.GetCharacterWalkFrames(game.selectedCharacter);
         currentWalkFrames = game.selectedCharacter == 0 ? game.walkDownFrames : walkSprites;
         spriteRenderer.flipX = false;
+        transform.rotation = Quaternion.identity;
 
         // Normalize the new pack's 100x100 sprites to the current hero's
         // visible world height so every playable character has the same size.
@@ -77,7 +78,15 @@ public class DungeonPlayerController : MonoBehaviour
         }
 
         movement = ReadMovement();
-        if (movement.sqrMagnitude > 0.01f) facingDirection = movement.normalized;
+        if (movement.sqrMagnitude > 0.01f)
+        {
+            // Keep a clear cardinal facing direction while allowing diagonal movement.
+            if (Mathf.Abs(movement.x) > Mathf.Abs(movement.y))
+                facingDirection = movement.x < 0f ? Vector2.left : Vector2.right;
+            else
+                facingDirection = movement.y < 0f ? Vector2.down : Vector2.up;
+            ApplyCharacterFacing();
+        }
         if (swingTimer > 0f)
         {
             AnimateAttack();
@@ -125,6 +134,7 @@ public class DungeonPlayerController : MonoBehaviour
         if (game.selectedCharacter != 0)
         {
             currentAttackFrames = game.GetCharacterAttackFrames(game.selectedCharacter);
+            ApplyCharacterFacing();
             attackFlipX = false;
         }
         else if (Mathf.Abs(facingDirection.x) > Mathf.Abs(facingDirection.y))
@@ -213,10 +223,39 @@ public class DungeonPlayerController : MonoBehaviour
         }
     }
 
+    void ApplyCharacterFacing()
+    {
+        if (spriteRenderer == null || game == null) return;
+        if (game.selectedCharacter == 0)
+        {
+            transform.rotation = Quaternion.identity;
+            spriteRenderer.flipX = false;
+            return;
+        }
+
+        // The Soldier/Orc sheets face right. Mirror for left and rotate the
+        // visual direction for up/down so movement and sword swings face correctly.
+        spriteRenderer.flipX = false;
+        float angle = 0f;
+        if (facingDirection == Vector2.left)
+        {
+            spriteRenderer.flipX = true;
+        }
+        else if (facingDirection == Vector2.up)
+        {
+            angle = 90f;
+        }
+        else if (facingDirection == Vector2.down)
+        {
+            angle = -90f;
+        }
+        transform.rotation = Quaternion.Euler(0f, 0f, angle);
+    }
+
     void RestoreMovementSprite()
     {
         if (spriteRenderer == null) return;
-        spriteRenderer.flipX = false;
+        ApplyCharacterFacing();
         if (movement.sqrMagnitude > 0.01f && currentWalkFrames != null && currentWalkFrames.Length > 0)
         {
             int index = Mathf.Clamp(walkFrame, 0, currentWalkFrames.Length - 1);
