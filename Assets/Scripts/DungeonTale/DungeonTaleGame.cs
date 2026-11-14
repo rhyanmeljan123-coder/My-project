@@ -81,8 +81,14 @@ public class DungeonTaleGame : MonoBehaviour
     }
     void SpawnEnemy(Sprite sprite, Vector2 pos, float speed, int hp) {
         var e=new GameObject("Dungeon Monster");dungeonObjects.Add(e);e.transform.position=pos;
-        var sr=e.AddComponent<SpriteRenderer>();sr.sprite=sprite? sprite:slimeSprite;sr.sortingOrder=9;
-        e.AddComponent<CircleCollider2D>().isTrigger=true;
+
+        // Keep physics on the root and animate only this child visual.
+        var visual = new GameObject("Monster Visual");
+        visual.transform.SetParent(e.transform, false);
+        var sr=visual.AddComponent<SpriteRenderer>();sr.sprite=sprite? sprite:slimeSprite;sr.sortingOrder=9;
+
+        var collider = e.AddComponent<CircleCollider2D>();
+        collider.isTrigger=false;
         var brain=e.AddComponent<DungeonEnemy>();brain.game=this;brain.target=player;brain.speed=speed;brain.SetHealth(hp);
     }
     void CreatePickups() {

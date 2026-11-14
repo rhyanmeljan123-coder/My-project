@@ -3,11 +3,20 @@ using System.Collections.Generic;
 public class DungeonEnemy : MonoBehaviour
 {
     public DungeonTaleGame game; public Transform target; public float speed=1.6f;
-    private float attackTimer;
+    private float nextAttackTime;
     private int health = 2;
     private int maxHealth = 2;
     private SpriteRenderer spriteRenderer;
+    private Transform visualTransform;
+    private Vector3 visualBaseLocalPosition;
+    private Vector3 visualBaseLocalScale;
+    private Color visualBaseColor = Color.white;
     private Rigidbody2D body;
+    private bool isAttacking;
+    private float attackAnimationTime;
+    private Vector2 attackDirection = Vector2.down;
+    private const float AttackCooldown = 1.1f;
+    private const float AttackDuration = 0.34f;
     private Vector2 moveDirection;
     private readonly List<Vector2> path = new List<Vector2>();
     private float nextPathRefresh;
@@ -16,7 +25,16 @@ public class DungeonEnemy : MonoBehaviour
 
     void Awake()
     {
-        spriteRenderer = GetComponent<SpriteRenderer>();
+        // Keep animation on the child visual so the root collider remains solid and stationary.
+        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        if (spriteRenderer != null)
+        {
+            visualTransform = spriteRenderer.transform;
+            visualBaseLocalPosition = visualTransform.localPosition;
+            visualBaseLocalScale = visualTransform.localScale;
+            visualBaseColor = spriteRenderer.color;
+        }
+
         body = GetComponent<Rigidbody2D>();
         if (body == null) body = gameObject.AddComponent<Rigidbody2D>();
         body.bodyType = RigidbodyType2D.Dynamic;
@@ -28,6 +46,7 @@ public class DungeonEnemy : MonoBehaviour
 
         // Enemies must use solid colliders. Trigger colliders do not stop at walls.
         var collider = GetComponent<Collider2D>();
+        if (collider == null) collider = gameObject.AddComponent<CircleCollider2D>();
         if (collider != null) collider.isTrigger = false;
     }
 
@@ -39,13 +58,21 @@ public class DungeonEnemy : MonoBehaviour
     void Update()
     {
         moveDirection = Vector2.zero;
-        if (target == null || game == null || game.IsFinished()) return;
+
+        if (game != null && game.IsFinished())
+        {
+            if (isAttacking) FinishAttackAnimation();
+            return;
+        }
+
+        UpdateAttackAnimation();
+        if (isAttacking || target == null || game == null) return;
 
         float distance = Vector2.Distance(transform.position, target.position);
         if (distance <= 0.9f)
         {
-            // Stop chasing at close range. Actual damage is applied only
-            // while the player's collider is touching this monster.
+            // Stop chasing at close range. Damage is applied only by the
+            // solid-collider contact callback below.
             path.Clear();
             return;
         }
@@ -70,23 +97,90 @@ public class DungeonEnemy : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (body == null || moveDirection.sqrMagnitude < 0.001f) return;
+        if (body == null || isAttacking || moveDirection.sqrMagnitude < 0.001f) return;
         body.MovePosition(body.position + moveDirection * speed * Time.fixedDeltaTime);
     }
 
-    void OnTriggerStay2D(Collider2D other)
+    void OnCollisionStay2D(Collision2D collision)
     {
-        if (target == null || game == null || game.IsFinished()) return;
+        if (target == null || game == null || game.IsFinished() || isAttacking || Time.time < nextAttackTime)
+            return;
 
-        // Do not damage the player from a distance: the player's collider
-        // must actually overlap the monster's contact collider.
-        if (other.transform != target && !other.transform.IsChildOf(target)) return;
+        // The player must be the object actually touching this solid monster collider.
+        Transform other = collision.gameObject != null ? collision.gameObject.transform : null;
+        if (other == null || (other != target && !other.IsChildOf(target))) return;
 
-        if (Time.time >= attackTimer)
+        BeginAttackAnimation();
+        nextAttackTime = Time.time + AttackCooldown;
+        game.DamagePlayer();
+    }
+
+    void BeginAttackAnimation()
+    {
+        Vector2 toPlayer = (Vector2)target.position - body.position;
+        attackDirection = toPlayer.sqrMagnitude > 0.001f ? toPlayer.normalized : Vector2.down;
+        attackAnimationTime = 0f;
+        isAttacking = true;
+    }
+
+    void UpdateAttackAnimation()
+    {
+        if (!isAttacking) return;
+
+        attackAnimationTime += Time.deltaTime;
+        float t = Mathf.Clamp01(attackAnimationTime / AttackDuration);
+        float lunge;
+
+        // Brief wind-up, quick forward strike, then a smooth return to idle.
+        if (t < 0.25f)
         {
-            attackTimer = Time.time + 1.1f;
-            game.DamagePlayer();
+            float phase = Mathf.SmoothStep(0f, 1f, t / 0.25f);
+            lunge = Mathf.Lerp(0f, -0.08f, phase);
         }
+        else if (t < 0.52f)
+        {
+            float phase = Mathf.SmoothStep(0f, 1f, (t - 0.25f) / 0.27f);
+            lunge = Mathf.Lerp(-0.08f, 0.22f, phase);
+        }
+        else
+        {
+            float phase = Mathf.SmoothStep(0f, 1f, (t - 0.52f) / 0.48f);
+            lunge = Mathf.Lerp(0.22f, 0f, phase);
+        }
+
+        float squash = Mathf.Sin(t * Mathf.PI);
+        if (visualTransform != null)
+        {
+            visualTransform.localPosition = visualBaseLocalPosition +
+                new Vector3(attackDirection.x, attackDirection.y, 0f) * lunge;
+            visualTransform.localScale = new Vector3(
+                visualBaseLocalScale.x * (1f + 0.10f * squash),
+                visualBaseLocalScale.y * (1f - 0.07f * squash),
+                visualBaseLocalScale.z);
+        }
+
+        if (spriteRenderer != null)
+        {
+            float flash = Mathf.Clamp01(1f - Mathf.Abs(t - 0.52f) / 0.18f);
+            Color strikeColor = new Color(1f, 0.65f, 0.65f, visualBaseColor.a);
+            spriteRenderer.color = Color.Lerp(visualBaseColor, strikeColor, flash * 0.55f);
+        }
+
+        if (attackAnimationTime >= AttackDuration)
+            FinishAttackAnimation();
+    }
+
+    void FinishAttackAnimation()
+    {
+        isAttacking = false;
+        attackAnimationTime = 0f;
+        if (visualTransform != null)
+        {
+            visualTransform.localPosition = visualBaseLocalPosition;
+            visualTransform.localScale = visualBaseLocalScale;
+        }
+        if (spriteRenderer != null)
+            spriteRenderer.color = visualBaseColor;
     }
 
     void RebuildPath(Vector3Int goalCell)
