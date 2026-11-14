@@ -97,7 +97,8 @@ public class DungeonPlayerController : MonoBehaviour
     void FixedUpdate()
     {
         if (body == null) return;
-        body.MovePosition(body.position + movement * moveSpeed * Time.fixedDeltaTime);
+        float effectiveSpeed = game != null ? game.GetPlayerMoveSpeed(moveSpeed) : moveSpeed;
+        body.MovePosition(body.position + movement * effectiveSpeed * Time.fixedDeltaTime);
     }
 
     void Attack()
@@ -131,7 +132,7 @@ public class DungeonPlayerController : MonoBehaviour
         foreach (Collider2D hit in hits)
         {
             DungeonEnemy enemy = hit.GetComponent<DungeonEnemy>();
-            if (enemy != null) enemy.TakeHit();
+            if (enemy != null) enemy.TakeHit(game.RollPlayerAttackDamage());
         }
     }
 
