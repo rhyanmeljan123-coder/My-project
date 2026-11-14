@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 public class DungeonEnemy : MonoBehaviour
 {
     public DungeonTaleGame game; public Transform target; public float speed=1.6f;
@@ -8,6 +9,10 @@ public class DungeonEnemy : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private Rigidbody2D body;
     private Vector2 moveDirection;
+    private readonly List<Vector2> path = new List<Vector2>();
+    private float nextPathRefresh;
+    private Vector3Int lastTargetCell = new Vector3Int(int.MinValue, int.MinValue, 0);
+    private const float RepathInterval = 0.35f;
 
     void Awake()
     {
@@ -37,24 +42,152 @@ public class DungeonEnemy : MonoBehaviour
         if (target == null || game == null || game.IsFinished()) return;
 
         float distance = Vector2.Distance(transform.position, target.position);
-        if (distance > 0.8f)
+        if (distance <= 0.9f)
         {
-            moveDirection = ((Vector2)target.position - body.position).normalized;
+            path.Clear();
+            if (Time.time >= attackTimer)
+            {
+                attackTimer = Time.time + 1.1f;
+                game.DamagePlayer();
+            }
+            return;
         }
-        else if (Time.time >= attackTimer)
+
+        Vector3Int targetCell = game.wallMap != null
+            ? game.wallMap.WorldToCell(target.position)
+            : new Vector3Int(Mathf.RoundToInt(target.position.x), Mathf.RoundToInt(target.position.y), 0);
+
+        if (Time.time >= nextPathRefresh || targetCell != lastTargetCell || path.Count == 0)
         {
-            attackTimer = Time.time + 1.1f;
-            game.DamagePlayer();
+            RebuildPath(targetCell);
+            lastTargetCell = targetCell;
+            nextPathRefresh = Time.time + RepathInterval;
         }
+
+        while (path.Count > 0 && Vector2.Distance(body.position, path[0]) < 0.12f)
+            path.RemoveAt(0);
+
+        if (path.Count > 0)
+            moveDirection = (path[0] - body.position).normalized;
     }
 
     void FixedUpdate()
     {
         if (body == null || moveDirection.sqrMagnitude < 0.001f) return;
+        body.MovePosition(body.position + moveDirection * speed * Time.fixedDeltaTime);
+    }
 
-        // Rigidbody movement respects the solid TilemapCollider2D walls.
-        Vector2 nextPosition = body.position + moveDirection * speed * Time.fixedDeltaTime;
-        body.MovePosition(nextPosition);
+    void RebuildPath(Vector3Int goalCell)
+    {
+        path.Clear();
+        if (game == null || game.wallMap == null) return;
+
+        Vector3Int startCell = game.wallMap.WorldToCell(body.position);
+        if (!game.IsWalkableDungeonCell(startCell))
+        {
+            // If a monster spawned against a wall, begin from the nearest open cell.
+            bool found = false;
+            for (int radius = 1; radius <= 3 && !found; radius++)
+            for (int x = -radius; x <= radius && !found; x++)
+            for (int y = -radius; y <= radius && !found; y++)
+            {
+                if (Mathf.Abs(x) != radius && Mathf.Abs(y) != radius) continue;
+                Vector3Int candidate = startCell + new Vector3Int(x, y, 0);
+                if (game.IsWalkableDungeonCell(candidate))
+                {
+                    startCell = candidate;
+                    found = true;
+                }
+            }
+            if (!found) return;
+        }
+
+        // Route to a free cell adjacent to the player, never through a wall.
+        Vector3Int[] offsets = {
+            new Vector3Int(0,1,0), new Vector3Int(1,0,0),
+            new Vector3Int(0,-1,0), new Vector3Int(-1,0,0),
+            new Vector3Int(1,1,0), new Vector3Int(1,-1,0),
+            new Vector3Int(-1,-1,0), new Vector3Int(-1,1,0)
+        };
+        Vector3Int destination = goalCell;
+        if (!game.IsWalkableDungeonCell(destination))
+        {
+            float best = float.MaxValue;
+            foreach (var offset in offsets)
+            {
+                Vector3Int candidate = goalCell + offset;
+                if (!game.IsWalkableDungeonCell(candidate)) continue;
+                float score = (candidate - startCell).sqrMagnitude;
+                if (score < best) { best = score; destination = candidate; }
+            }
+        }
+
+        var open = new List<Vector3Int> { startCell };
+        var cameFrom = new Dictionary<Vector3Int, Vector3Int>();
+        var gScore = new Dictionary<Vector3Int, float> { [startCell] = 0f };
+        var closed = new HashSet<Vector3Int>();
+        int safety = 0;
+
+        while (open.Count > 0 && safety++ < 1800)
+        {
+            int bestIndex = 0;
+            float bestScore = float.MaxValue;
+            for (int i = 0; i < open.Count; i++)
+            {
+                Vector3Int node = open[i];
+                float score = gScore[node] + Heuristic(node, destination);
+                if (score < bestScore) { bestScore = score; bestIndex = i; }
+            }
+
+            Vector3Int current = open[bestIndex];
+            open.RemoveAt(bestIndex);
+            if (current == destination)
+            {
+                ReconstructPath(cameFrom, current);
+                return;
+            }
+            if (!closed.Add(current)) continue;
+
+            foreach (var offset in offsets)
+            {
+                Vector3Int next = current + offset;
+                if (!game.IsWalkableDungeonCell(next) || closed.Contains(next)) continue;
+
+                bool diagonal = offset.x != 0 && offset.y != 0;
+                if (diagonal &&
+                    (!game.IsWalkableDungeonCell(current + new Vector3Int(offset.x, 0, 0)) ||
+                     !game.IsWalkableDungeonCell(current + new Vector3Int(0, offset.y, 0))))
+                    continue;
+
+                float tentative = gScore[current] + (diagonal ? 1.4142f : 1f);
+                if (!gScore.TryGetValue(next, out float oldScore) || tentative < oldScore)
+                {
+                    cameFrom[next] = current;
+                    gScore[next] = tentative;
+                    if (!open.Contains(next)) open.Add(next);
+                }
+            }
+        }
+    }
+
+    float Heuristic(Vector3Int a, Vector3Int b)
+    {
+        int dx = Mathf.Abs(a.x - b.x);
+        int dy = Mathf.Abs(a.y - b.y);
+        return Mathf.Max(dx, dy) + 0.4142f * Mathf.Min(dx, dy);
+    }
+
+    void ReconstructPath(Dictionary<Vector3Int, Vector3Int> cameFrom, Vector3Int current)
+    {
+        var cells = new List<Vector3Int> { current };
+        while (cameFrom.TryGetValue(current, out Vector3Int previous))
+        {
+            current = previous;
+            cells.Add(current);
+        }
+        cells.Reverse();
+        for (int i = 1; i < cells.Count; i++)
+            path.Add(game.wallMap.GetCellCenterWorld(cells[i]));
     }
     public void TakeHit()
     {
