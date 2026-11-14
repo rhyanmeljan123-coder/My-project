@@ -51,6 +51,7 @@ public class DungeonTaleGame : MonoBehaviour
     private Button continueButton, qualityButton, fullscreenButton;
     private Slider masterVolumeSlider;
     private readonly Button[] characterButtons = new Button[3];
+    private readonly Image[] characterPortraitImages = new Image[3];
     private bool hasSavedGame;
 
     private const string SavePrefix = "DungeonTale_";
@@ -503,7 +504,8 @@ public class DungeonTaleGame : MonoBehaviour
             var portraitImage = portrait.GetComponent<Image>();
             portraitImage.sprite = previews[i];
             portraitImage.preserveAspect = true;
-            portraitImage.color = previews[i] ? Color.white : new Color(1f, 1f, 1f, 0f);
+            portraitImage.color = previews[i] ? Color.white : new Color(1f, 1f, 1f, 0.12f);
+            characterPortraitImages[i] = portraitImage;
             var name = MakeCenteredText(card.transform, "Character Name", new Vector2(0, -105), new Vector2(200, 45), 22, FontStyle.Bold);
             name.text = characterNames[i];
         }
@@ -583,6 +585,12 @@ public class DungeonTaleGame : MonoBehaviour
         PlayerPrefs.SetInt(SavePrefix + "Character", selectedCharacter);
         PlayerPrefs.Save();
         var controller = player != null ? player.GetComponent<DungeonPlayerController>() : null;
+        Sprite chosenSprite = GetCharacterIdleSprite(selectedCharacter);
+        if (player != null && chosenSprite != null)
+        {
+            var playerRenderer = player.GetComponent<SpriteRenderer>();
+            if (playerRenderer != null) playerRenderer.sprite = chosenSprite;
+        }
         if (controller != null) controller.ApplySelectedCharacter();
         UpdateCharacterSelectionUI();
     }
@@ -593,8 +601,16 @@ public class DungeonTaleGame : MonoBehaviour
         characterSelectionLabel.text = "SELECTED: " + names[selectedCharacter];
         for (int i = 0; i < characterButtons.Length; i++)
         {
+            Sprite preview = GetCharacterIdleSprite(i);
+            if (characterPortraitImages[i] != null)
+            {
+                characterPortraitImages[i].sprite = preview;
+                characterPortraitImages[i].color = preview != null ? Color.white : new Color(1f, 0.35f, 0.35f, 0.9f);
+                characterPortraitImages[i].preserveAspect = true;
+            }
             var image = characterButtons[i].GetComponent<Image>();
             image.color = i == selectedCharacter ? new Color(0.12f, 0.48f, 0.42f, 1f) : new Color(0.12f, 0.2f, 0.29f, 1f);
+            characterButtons[i].interactable = preview != null;
         }
     }
 
