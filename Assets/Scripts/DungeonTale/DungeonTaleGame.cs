@@ -61,6 +61,7 @@ public class DungeonTaleGame : MonoBehaviour
     private float experienceGainMultiplier = 1f;
     private float healthRegenInterval = 12f;
     private float nextHealthRegen;
+    private bool healthRegenEnabled;
 
     void Start() {
         CreatePlayer(); DecorateDungeon(); CreateEnemies(); CreatePickups(); CreateTraps(); CreateExit(); CreateUI(); UpdateHud();
@@ -310,6 +311,7 @@ public class DungeonTaleGame : MonoBehaviour
             case 3:
                 maxHealth += 2;
                 playerHealth = Mathf.Min(maxHealth, playerHealth + 2);
+                healthRegenEnabled = true;
                 if (nextHealthRegen <= Time.time) nextHealthRegen = Time.time + healthRegenInterval;
                 ShowMessage("VITALITY! Maximum health increased and you recovered 2 HP.");
                 break;
@@ -575,6 +577,7 @@ public class DungeonTaleGame : MonoBehaviour
             return;
         }
         playerHealth--;
+        if (healthRegenEnabled && nextHealthRegen <= 0f) nextHealthRegen = Time.time + healthRegenInterval;
         UpdateHud();
         if (playerHealth <= 0) { finished = true; ShowEndScreen(false); }
     }
@@ -802,7 +805,7 @@ public class DungeonTaleGame : MonoBehaviour
                 ShowMessage("ENERGY SHIELD RECHARGED.");
                 UpdateHud();
             }
-            if (maxHealth > playerHealth && nextHealthRegen > 0f && Time.time >= nextHealthRegen)
+            if (healthRegenEnabled && maxHealth > playerHealth && nextHealthRegen > 0f && Time.time >= nextHealthRegen)
             {
                 playerHealth = Mathf.Min(maxHealth, playerHealth + 1);
                 nextHealthRegen = playerHealth < maxHealth ? Time.time + healthRegenInterval : 0f;
