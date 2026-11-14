@@ -73,11 +73,28 @@ public class DungeonEnemy : MonoBehaviour
         UpdateAttackAnimation();
         if (isAttacking || target == null || game == null) return;
 
+        // Detect melee range from collider geometry instead of relying only
+        // on OnCollisionStay2D. This works consistently for every selected
+        // player sprite/scale, including Soldier and Orc.
+        Collider2D playerCollider = target.GetComponent<Collider2D>();
+        Collider2D enemyCollider = GetComponent<Collider2D>();
+        if (playerCollider != null && enemyCollider != null)
+        {
+            ColliderDistance2D separation = enemyCollider.Distance(playerCollider);
+            if (separation.isValid && separation.distance <= 0.12f &&
+                Time.time >= nextAttackTime)
+            {
+                BeginAttackAnimation();
+                attackDamagePending = true;
+                nextAttackTime = Time.time + AttackCooldown;
+                path.Clear();
+                return;
+            }
+        }
+
         float distance = Vector2.Distance(transform.position, target.position);
         if (distance <= 0.9f)
         {
-            // Stop chasing at close range. Damage is applied only by the
-            // solid-collider contact callback below.
             path.Clear();
             return;
         }
@@ -111,15 +128,10 @@ public class DungeonEnemy : MonoBehaviour
         if (target == null || game == null || game.IsFinished() || isAttacking || Time.time < nextAttackTime)
             return;
 
-        // The player must be the object actually touching this solid monster collider.
-        Transform other = collision.gameObject != null ? collision.gameObject.transform : null;
+        // Backup contact path for cases where the physics solver reports a
+        // collision before the next Update proximity check.
+        Transform other = collision.collider != null ? collision.collider.transform : null;
         if (other == null || (other != target && !other.IsChildOf(target))) return;
-
-        // Require the player to be physically touching and very close to the
-        // monster's root. This prevents damage from stray/oversized colliders.
-        float contactDistance = Vector2.Distance(body.position, target.position);
-        if (contactDistance > 1.15f) return;
-
         BeginAttackAnimation();
         attackDamagePending = true;
         nextAttackTime = Time.time + AttackCooldown;
