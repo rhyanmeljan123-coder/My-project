@@ -282,20 +282,29 @@ public class DungeonTaleGame : MonoBehaviour
 
         string[] titles = { "POWER", "SPEED", "CRITICAL STRIKE", "VITALITY", "ENERGY SHIELD", "DODGE", "XP BOOST" };
         string[] descriptions = {
-            "Increase sword damage by +1.",
-            "Move faster by +0.6.",
-            "Gain +10% critical chance. Critical hits deal double damage.",
-            "+2 maximum HP, heal 2 HP now, and regenerate 1 HP every 12 seconds.",
-            "Gain 1 shield charge. A shield blocks one hit and recharges every 12 seconds.",
-            "Gain +10% chance to completely avoid an incoming hit.",
-            "Earn 25% more XP from every defeated monster."
+            "Deal more damage with every sword strike.",
+            "Move faster and avoid enemy attacks.",
+            "Land powerful critical hits for double damage.",
+            "Increase maximum health and recover HP.",
+            "Block an incoming hit with a protective shield.",
+            "Gain a chance to completely evade damage.",
+            "Earn more experience from every monster."
         };
-        Color[] cardColors = {
-            new Color(0.45f, 0.16f, 0.13f), new Color(0.12f, 0.3f, 0.48f),
-            new Color(0.34f, 0.19f, 0.48f), new Color(0.12f, 0.42f, 0.28f),
-            new Color(0.08f, 0.38f, 0.48f), new Color(0.42f, 0.32f, 0.12f),
-            new Color(0.28f, 0.28f, 0.48f)
+        string[] statLabels = { "DAMAGE  +1", "MOVE SPEED  +0.6", "CRITICAL  +10%", "MAX HP  +2", "SHIELD  +1", "DODGE  +10%", "XP GAIN  +25%" };
+        string[] symbols = { "ATK", "SPD", "CRIT", "HP", "SHD", "EVA", "XP" };
+        Color[] accents = {
+            new Color(1f, 0.38f, 0.25f), new Color(0.25f, 0.68f, 1f),
+            new Color(0.75f, 0.43f, 1f), new Color(0.28f, 0.88f, 0.52f),
+            new Color(0.22f, 0.82f, 0.9f), new Color(1f, 0.72f, 0.28f),
+            new Color(0.48f, 0.62f, 1f)
         };
+
+        var heading = levelUpPanel.transform.Find("Level Up Heading");
+        if (heading != null)
+        {
+            var headingText = heading.GetComponent<Text>();
+            if (headingText != null) headingText.text = "LEVEL UP!";
+        }
 
         List<int> availableChoices = new List<int>();
         for (int i = 0; i < titles.Length; i++) availableChoices.Add(i);
@@ -310,31 +319,107 @@ public class DungeonTaleGame : MonoBehaviour
         for (int i = 0; i < 3; i++)
         {
             int choice = availableChoices[i];
+            Color accent = accents[choice];
             var card = new GameObject(titles[choice] + " Card", typeof(RectTransform), typeof(Image), typeof(Button));
             card.transform.SetParent(levelUpCardsRoot, false);
             var cr = card.GetComponent<RectTransform>();
             cr.anchorMin = cr.anchorMax = new Vector2(0.5f, 0.5f);
             cr.pivot = new Vector2(0.5f, 0.5f);
             cr.anchoredPosition = new Vector2((i - 1) * 370, 0);
-            cr.sizeDelta = new Vector2(345, 250);
-            var ci = card.GetComponent<Image>();
-            ci.sprite = uiWhiteSprite;
-            ci.color = cardColors[choice];
+            cr.sizeDelta = new Vector2(340, 260);
+
+            var cardImage = card.GetComponent<Image>();
+            cardImage.sprite = uiWhiteSprite;
+            cardImage.color = new Color(0.055f, 0.09f, 0.15f, 1f);
+
             var button = card.GetComponent<Button>();
-            var colors = button.colors;
-            colors.normalColor = ci.color;
-            colors.highlightedColor = new Color(0.55f, 0.65f, 0.78f, 1f);
-            colors.pressedColor = new Color(0.75f, 0.8f, 0.9f, 1f);
-            button.colors = colors;
+            var buttonColors = button.colors;
+            buttonColors.normalColor = Color.white;
+            buttonColors.highlightedColor = new Color(1f, 1f, 1f, 1f);
+            buttonColors.pressedColor = new Color(0.78f, 0.84f, 0.94f, 1f);
+            buttonColors.fadeDuration = 0.12f;
+            button.colors = buttonColors;
             button.onClick.AddListener(() => ChooseUpgrade(choice));
-            var title = MakeCenteredText(card.transform, "Card Title", new Vector2(0, 65),
-                new Vector2(320, 55), 24, FontStyle.Bold);
+
+            // Thin colored frame and left accent make each upgrade type easy to identify.
+            var frame = new GameObject("Accent Frame", typeof(RectTransform), typeof(Image));
+            frame.transform.SetParent(card.transform, false);
+            var fr = frame.GetComponent<RectTransform>();
+            fr.anchorMin = Vector2.zero; fr.anchorMax = Vector2.one;
+            fr.offsetMin = Vector2.zero; fr.offsetMax = Vector2.zero;
+            frame.GetComponent<Image>().sprite = uiWhiteSprite;
+            frame.GetComponent<Image>().color = new Color(accent.r, accent.g, accent.b, 0.24f);
+            frame.GetComponent<Image>().raycastTarget = false;
+
+            var inner = new GameObject("Card Surface", typeof(RectTransform), typeof(Image));
+            inner.transform.SetParent(card.transform, false);
+            var ir = inner.GetComponent<RectTransform>();
+            ir.anchorMin = Vector2.zero; ir.anchorMax = Vector2.one;
+            ir.offsetMin = new Vector2(3, 3); ir.offsetMax = new Vector2(-3, -3);
+            inner.GetComponent<Image>().sprite = uiWhiteSprite;
+            inner.GetComponent<Image>().color = new Color(0.055f, 0.09f, 0.15f, 1f);
+            inner.GetComponent<Image>().raycastTarget = false;
+
+            var stripe = new GameObject("Accent Stripe", typeof(RectTransform), typeof(Image));
+            stripe.transform.SetParent(inner.transform, false);
+            var sr = stripe.GetComponent<RectTransform>();
+            sr.anchorMin = new Vector2(0, 0); sr.anchorMax = new Vector2(0, 1);
+            sr.pivot = new Vector2(0, 0.5f); sr.anchoredPosition = Vector2.zero;
+            sr.sizeDelta = new Vector2(7, 0);
+            stripe.GetComponent<Image>().sprite = uiWhiteSprite;
+            stripe.GetComponent<Image>().color = accent;
+            stripe.GetComponent<Image>().raycastTarget = false;
+
+            var icon = new GameObject("Upgrade Icon", typeof(RectTransform), typeof(Image));
+            icon.transform.SetParent(inner.transform, false);
+            var iconRect = icon.GetComponent<RectTransform>();
+            iconRect.anchorMin = iconRect.anchorMax = new Vector2(0.5f, 1f);
+            iconRect.pivot = new Vector2(0.5f, 1f);
+            iconRect.anchoredPosition = new Vector2(0, -18);
+            iconRect.sizeDelta = new Vector2(62, 62);
+            icon.GetComponent<Image>().sprite = uiWhiteSprite;
+            icon.GetComponent<Image>().color = new Color(accent.r, accent.g, accent.b, 0.2f);
+            icon.GetComponent<Image>().raycastTarget = false;
+
+            var symbol = MakeCenteredText(icon.transform, "Icon Symbol", Vector2.zero, new Vector2(58, 54), 17, FontStyle.Bold);
+            symbol.text = symbols[choice];
+            symbol.color = accent;
+            symbol.raycastTarget = false;
+
+            var title = MakeCenteredText(inner.transform, "Card Title", new Vector2(0, -92),
+                new Vector2(310, 36), 22, FontStyle.Bold);
             title.text = titles[choice];
+            title.color = Color.white;
             title.raycastTarget = false;
-            var desc = MakeCenteredText(card.transform, "Card Description", new Vector2(0, -35),
-                new Vector2(315, 130), 17, FontStyle.Normal);
+
+            var stat = MakeCenteredText(inner.transform, "Upgrade Stat", new Vector2(0, -128),
+                new Vector2(300, 28), 15, FontStyle.Bold);
+            stat.text = statLabels[choice];
+            stat.color = accent;
+            stat.raycastTarget = false;
+
+            var desc = MakeCenteredText(inner.transform, "Card Description", new Vector2(0, -171),
+                new Vector2(300, 48), 15, FontStyle.Normal);
             desc.text = descriptions[choice];
+            desc.color = new Color(0.78f, 0.84f, 0.92f, 1f);
             desc.raycastTarget = false;
+
+            var footer = new GameObject("Choose Footer", typeof(RectTransform), typeof(Image));
+            footer.transform.SetParent(inner.transform, false);
+            var footerRect = footer.GetComponent<RectTransform>();
+            footerRect.anchorMin = new Vector2(0, 0); footerRect.anchorMax = new Vector2(1, 0);
+            footerRect.pivot = new Vector2(0.5f, 0);
+            footerRect.anchoredPosition = new Vector2(0, 0);
+            footerRect.sizeDelta = new Vector2(0, 34);
+            footer.GetComponent<Image>().sprite = uiWhiteSprite;
+            footer.GetComponent<Image>().color = new Color(accent.r, accent.g, accent.b, 0.16f);
+            footer.GetComponent<Image>().raycastTarget = false;
+
+            var choose = MakeCenteredText(footer.transform, "Choose Label", Vector2.zero,
+                new Vector2(300, 30), 14, FontStyle.Bold);
+            choose.text = "SELECT UPGRADE";
+            choose.color = accent;
+            choose.raycastTarget = false;
         }
     }
 
