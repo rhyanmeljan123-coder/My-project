@@ -65,6 +65,12 @@ public static class DungeonTaleBootstrap
         game.attackLeftFrames = FindSpriteSequence("Player_", 41, 4);
         game.attackRightFrames = FindSpriteSequence("Player_", 41, 4);
         game.attackUpFrames = FindSpriteSequence("Player_", 45, 5);
+        game.soldierIdleSprite = FindCharacterSprite("Soldier", "Idle");
+        game.soldierWalkFrames = FindCharacterFrames("Soldier", "Walk");
+        game.soldierAttackFrames = FindCharacterFrames("Soldier", "Attack01");
+        game.orcIdleSprite = FindCharacterSprite("Orc", "Idle");
+        game.orcWalkFrames = FindCharacterFrames("Orc", "Walk");
+        game.orcAttackFrames = FindCharacterFrames("Orc", "Attack01");
         game.slimeSprite = FindSprite("Char_Slime");
         game.skeletonSprite = FindSprite("Char_Skeletone");
         game.batSprite = FindSprite("Char_Bat");
@@ -115,6 +121,64 @@ public static class DungeonTaleBootstrap
         var result = new Sprite[count];
         for (int i = 0; i < count; i++) result[i] = FindSprite(prefix + (start + i));
         return result;
+    }
+
+    static Sprite FindCharacterSprite(string character, string animation)
+    {
+        Sprite[] frames = FindCharacterFrames(character, animation);
+        return frames.Length > 0 ? frames[0] : null;
+    }
+
+    static Sprite[] FindCharacterFrames(string character, string animation)
+    {
+        string expectedFile = character + "_" + animation + ".png";
+        var candidates = new System.Collections.Generic.List<string>();
+        foreach (var id in AssetDatabase.FindAssets("t:Texture2D"))
+        {
+            string path = AssetDatabase.GUIDToAssetPath(id);
+            if (path.Contains("Tiny RPG Character Asset Pack") &&
+                path.Contains("/" + character + "/") &&
+                path.EndsWith(expectedFile, System.StringComparison.OrdinalIgnoreCase))
+                candidates.Add(path);
+        }
+        candidates.Sort((a, b) => {
+            bool aPreferred = a.Contains("with shadows");
+            bool bPreferred = b.Contains("with shadows");
+            if (aPreferred != bPreferred) return aPreferred ? -1 : 1;
+            return string.CompareOrdinal(a, b);
+        });
+        foreach (string path in candidates)
+        {
+            var frames = new System.Collections.Generic.List<Sprite>();
+            foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(path))
+                if (asset is Sprite sprite) frames.Add(sprite);
+            frames.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+            if (frames.Count > 0) return frames.ToArray();
+        }
+        return new Sprite[0];
+    }
+
+    [MenuItem("Dungeon Tale/Assign Character Assets To Current Scene")]
+    public static void AssignCharacterAssetsToCurrentScene()
+    {
+        var game = UnityEngine.Object.FindObjectOfType<DungeonTaleGame>();
+        if (game == null)
+        {
+            EditorUtility.DisplayDialog("Dungeon Tale", "Open the DungeonTale scene first.", "OK");
+            return;
+        }
+        game.soldierIdleSprite = FindCharacterSprite("Soldier", "Idle");
+        game.soldierWalkFrames = FindCharacterFrames("Soldier", "Walk");
+        game.soldierAttackFrames = FindCharacterFrames("Soldier", "Attack01");
+        game.orcIdleSprite = FindCharacterSprite("Orc", "Idle");
+        game.orcWalkFrames = FindCharacterFrames("Orc", "Walk");
+        game.orcAttackFrames = FindCharacterFrames("Orc", "Attack01");
+        EditorUtility.SetDirty(game);
+        EditorSceneManager.MarkSceneDirty(game.gameObject.scene);
+        EditorSceneManager.SaveScene(game.gameObject.scene);
+        EditorUtility.DisplayDialog("Dungeon Tale",
+            "Character assets assigned. Soldier frames: " + game.soldierWalkFrames.Length +
+            ", Orc frames: " + game.orcWalkFrames.Length + ".", "OK");
     }
 
     static Sprite FindSprite(string n) {
