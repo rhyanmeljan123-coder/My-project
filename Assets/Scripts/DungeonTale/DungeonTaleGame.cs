@@ -595,13 +595,20 @@ public class DungeonTaleGame : MonoBehaviour
         UpdateCharacterSelectionUI();
     }
 
+    Sprite GetCharacterPreviewSprite(int index)
+    {
+        if (index == 1) return soldierIdleSprite;
+        if (index == 2) return orcIdleSprite;
+        return playerIdleSprite != null ? playerIdleSprite : heroSprite;
+    }
+
     void UpdateCharacterSelectionUI()
     {
         string[] names = { "CURRENT HERO", "SOLDIER", "ORC" };
         characterSelectionLabel.text = "SELECTED: " + names[selectedCharacter];
         for (int i = 0; i < characterButtons.Length; i++)
         {
-            Sprite preview = GetCharacterIdleSprite(i);
+            Sprite preview = GetCharacterPreviewSprite(i);
             if (characterPortraitImages[i] != null)
             {
                 characterPortraitImages[i].sprite = preview;
