@@ -3,6 +3,8 @@ using UnityEngine.Tilemaps;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
+using UnityEngine.EventSystems;
 using System.Collections.Generic;
 
 public class DungeonTaleGame : MonoBehaviour
@@ -119,6 +121,13 @@ public class DungeonTaleGame : MonoBehaviour
     }
     void CreateExit(){var g=MakePickup("Dungeon Exit",doorSprite,new Vector2(15,0),1.8f);g.AddComponent<BoxCollider2D>().isTrigger=true;g.AddComponent<DungeonExit>().game=this;}
     void CreateUI() {
+        // The project uses Unity's New Input System, so UI buttons need its UI input module.
+        if (EventSystem.current == null)
+        {
+            var eventSystemObject = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+            eventSystemObject.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
+        }
+
         // Give UI Images a real, readable white sprite so the health bar is rendered.
         var whiteTexture = new Texture2D(1, 1, TextureFormat.RGBA32, false);
         whiteTexture.SetPixel(0, 0, Color.white);
