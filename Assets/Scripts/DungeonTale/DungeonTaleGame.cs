@@ -62,6 +62,7 @@ public class DungeonTaleGame : MonoBehaviour
     private float playerSpeedBonus;
     private bool upgradeChoiceOpen;
     private GameObject levelUpPanel;
+    private Transform levelUpCardsRoot;
     private Image experienceFill;
     private RectTransform experienceFillRect;
     private Text experienceLabel;
@@ -261,6 +262,23 @@ public class DungeonTaleGame : MonoBehaviour
             new Vector2(1080, 70), 38, FontStyle.Bold);
         heading.text = "LEVEL UP!  CHOOSE ONE UPGRADE"; heading.color = new Color(0.45f, 0.9f, 1f, 1f); heading.raycastTarget = false;
 
+        var cardsRoot = new GameObject("Upgrade Cards", typeof(RectTransform));
+        cardsRoot.transform.SetParent(levelUpPanel.transform, false);
+        levelUpCardsRoot = cardsRoot.transform;
+        var cardsRect = cardsRoot.GetComponent<RectTransform>();
+        cardsRect.anchorMin = cardsRect.anchorMax = new Vector2(0.5f, 0.5f);
+        cardsRect.pivot = new Vector2(0.5f, 0.5f);
+        cardsRect.anchoredPosition = new Vector2(0, -20);
+        cardsRect.sizeDelta = new Vector2(1120, 270);
+        levelUpPanel.SetActive(false);
+    }
+
+    void PopulateLevelUpCards()
+    {
+        if (levelUpCardsRoot == null) return;
+        for (int i = levelUpCardsRoot.childCount - 1; i >= 0; i--)
+            Destroy(levelUpCardsRoot.GetChild(i).gameObject);
+
         string[] titles = { "POWER", "SPEED", "CRITICAL STRIKE", "VITALITY", "ENERGY SHIELD", "DODGE", "XP BOOST" };
         string[] descriptions = {
             "Increase sword damage by +1.",
@@ -278,7 +296,6 @@ public class DungeonTaleGame : MonoBehaviour
             new Color(0.28f, 0.28f, 0.48f)
         };
 
-        // Shuffle all seven upgrades, then show only three unique choices.
         List<int> availableChoices = new List<int>();
         for (int i = 0; i < titles.Length; i++) availableChoices.Add(i);
         for (int i = availableChoices.Count - 1; i > 0; i--)
@@ -293,30 +310,38 @@ public class DungeonTaleGame : MonoBehaviour
         {
             int choice = availableChoices[i];
             var card = new GameObject(titles[choice] + " Card", typeof(RectTransform), typeof(Image), typeof(Button));
-            card.transform.SetParent(levelUpPanel.transform, false);
+            card.transform.SetParent(levelUpCardsRoot, false);
             var cr = card.GetComponent<RectTransform>();
-            cr.anchorMin = new Vector2(0.5f, 0.5f); cr.anchorMax = new Vector2(0.5f, 0.5f);
+            cr.anchorMin = cr.anchorMax = new Vector2(0.5f, 0.5f);
             cr.pivot = new Vector2(0.5f, 0.5f);
-            cr.anchoredPosition = new Vector2((i - 1) * 370, -20);
+            cr.anchoredPosition = new Vector2((i - 1) * 370, 0);
             cr.sizeDelta = new Vector2(345, 250);
-            var ci = card.GetComponent<Image>(); ci.sprite = uiWhiteSprite; ci.color = cardColors[choice];
+            var ci = card.GetComponent<Image>();
+            ci.sprite = uiWhiteSprite;
+            ci.color = cardColors[choice];
             var button = card.GetComponent<Button>();
-            var colors = button.colors; colors.normalColor = ci.color;
+            var colors = button.colors;
+            colors.normalColor = ci.color;
             colors.highlightedColor = new Color(0.55f, 0.65f, 0.78f, 1f);
-            colors.pressedColor = new Color(0.75f, 0.8f, 0.9f, 1f); button.colors = colors;
+            colors.pressedColor = new Color(0.75f, 0.8f, 0.9f, 1f);
+            button.colors = colors;
             button.onClick.AddListener(() => ChooseUpgrade(choice));
             var title = MakeCenteredText(card.transform, "Card Title", new Vector2(0, 65),
-                new Vector2(320, 55), 24, FontStyle.Bold); title.text = titles[choice]; title.raycastTarget = false;
+                new Vector2(320, 55), 24, FontStyle.Bold);
+            title.text = titles[choice];
+            title.raycastTarget = false;
             var desc = MakeCenteredText(card.transform, "Card Description", new Vector2(0, -35),
-                new Vector2(315, 130), 17, FontStyle.Normal); desc.text = descriptions[choice]; desc.raycastTarget = false;
+                new Vector2(315, 130), 17, FontStyle.Normal);
+            desc.text = descriptions[choice];
+            desc.raycastTarget = false;
         }
-        levelUpPanel.SetActive(false);
     }
 
     void ShowLevelUpChoice()
     {
         if (upgradeChoiceOpen || levelUpPanel == null) return;
         upgradeChoiceOpen = true;
+        PopulateLevelUpCards();
         levelUpPanel.SetActive(true);
         UpdateHud();
     }
