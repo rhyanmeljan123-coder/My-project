@@ -44,6 +44,14 @@ public class DungeonTaleGame : MonoBehaviour
     private GameObject levelClearBanner;
     private Text levelClearTitle, levelClearSubtitle;
     private float levelClearBannerHideAt = -1f;
+    public int playerLevel = 1, experience = 0, experienceToNextLevel = 100, attackPower = 1;
+    public float criticalChance = 0.05f;
+    private float playerSpeedBonus;
+    private bool upgradeChoiceOpen;
+    private GameObject levelUpPanel;
+    private Image experienceFill;
+    private RectTransform experienceFillRect;
+    private Text experienceLabel;
 
     void Start() {
         CreatePlayer(); DecorateDungeon(); CreateEnemies(); CreatePickups(); CreateTraps(); CreateExit(); CreateUI(); UpdateHud();
@@ -176,6 +184,8 @@ public class DungeonTaleGame : MonoBehaviour
         message.text="WASD / Arrows: Move     SPACE: Attack     E: Use potion";
         CreateGameOverlay(canvas.transform);
         CreateLevelClearBanner(canvas.transform);
+        CreateExperienceBar(canvas.transform);
+        CreateLevelUpPanel(canvas.transform);
     }
     
     void CreateLevelClearBanner(Transform parent)
