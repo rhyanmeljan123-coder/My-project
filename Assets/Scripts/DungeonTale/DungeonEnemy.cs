@@ -44,12 +44,9 @@ public class DungeonEnemy : MonoBehaviour
         float distance = Vector2.Distance(transform.position, target.position);
         if (distance <= 0.9f)
         {
+            // Stop chasing at close range. Actual damage is applied only
+            // while the player's collider is touching this monster.
             path.Clear();
-            if (Time.time >= attackTimer)
-            {
-                attackTimer = Time.time + 1.1f;
-                game.DamagePlayer();
-            }
             return;
         }
 
@@ -75,6 +72,21 @@ public class DungeonEnemy : MonoBehaviour
     {
         if (body == null || moveDirection.sqrMagnitude < 0.001f) return;
         body.MovePosition(body.position + moveDirection * speed * Time.fixedDeltaTime);
+    }
+
+    void OnTriggerStay2D(Collider2D other)
+    {
+        if (target == null || game == null || game.IsFinished()) return;
+
+        // Do not damage the player from a distance: the player's collider
+        // must actually overlap the monster's contact collider.
+        if (other.transform != target && !other.transform.IsChildOf(target)) return;
+
+        if (Time.time >= attackTimer)
+        {
+            attackTimer = Time.time + 1.1f;
+            game.DamagePlayer();
+        }
     }
 
     void RebuildPath(Vector3Int goalCell)
