@@ -43,6 +43,7 @@ public class DungeonTaleGame : MonoBehaviour
     private Button primaryOverlayButton, secondaryOverlayButton;
     private GameObject levelClearBanner;
     private Text levelClearTitle, levelClearSubtitle;
+    private float levelClearBannerHideAt = -1f;
 
     void Start() {
         CreatePlayer(); DecorateDungeon(); CreateEnemies(); CreatePickups(); CreateTraps(); CreateExit(); CreateUI(); UpdateHud();
@@ -387,6 +388,7 @@ public class DungeonTaleGame : MonoBehaviour
                 levelClearTitle.text = "LEVEL " + dungeonLevel + " CLEAR!";
                 levelClearSubtitle.text = "All monsters defeated! Enter the portal to continue.";
                 levelClearBanner.SetActive(true);
+                levelClearBannerHideAt = Time.time + 2f;
             }
             SpawnNextDungeonPortal();
         }
@@ -561,7 +563,16 @@ public class DungeonTaleGame : MonoBehaviour
     public void UsePotion(){if(potions<=0||playerHealth>=maxHealth)return;potions--;playerHealth=Mathf.Min(maxHealth,playerHealth+3);UpdateHud();ShowMessage("Potion used. Health restored.");}
     public void HitTrap(){DamagePlayer();}
     public void ReachExit(){if(enemiesRemaining>0){ShowMessage("Defeat every monster first!");return;}if(!hasKey){ShowMessage("The exit is locked. Find the dungeon key!");return;}finished=true;ShowEndScreen(true);}
-    void Update(){if(!gameStarted || Keyboard.current==null)return;if(Keyboard.current.eKey.wasPressedThisFrame)UsePotion();}
+    void Update()
+    {
+        if (levelClearBanner != null && levelClearBanner.activeSelf && levelClearBannerHideAt >= 0f && Time.time >= levelClearBannerHideAt)
+        {
+            levelClearBanner.SetActive(false);
+            levelClearBannerHideAt = -1f;
+        }
+        if (!gameStarted || Keyboard.current == null) return;
+        if (Keyboard.current.eKey.wasPressedThisFrame) UsePotion();
+    }
     public bool IsFinished(){return finished || !gameStarted;}
 
 
