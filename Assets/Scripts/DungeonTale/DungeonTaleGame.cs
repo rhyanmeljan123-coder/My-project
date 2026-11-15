@@ -236,12 +236,19 @@ public class DungeonTaleGame : MonoBehaviour
         renderer.sprite = idle != null && idle.Length > 0 ? idle[0] : null;
         renderer.sortingOrder = 9;
 
-        // Use the same visible height as the Wraiths in Level 1.
+        // Match the rendered height of the Level 1 Wraiths exactly.
+        // Calculate the Wraith's actual world height first, then scale this
+        // slime's sprite to that same height (including each sheet's PPU).
         Sprite heroReference = playerIdleSprite != null ? playerIdleSprite : heroSprite;
-        if (heroReference != null && renderer.sprite != null &&
-            heroReference.bounds.size.y > 0.001f && renderer.sprite.bounds.size.y > 0.001f)
+        Sprite[] levelOneWraithIdle = GetWraithFrames(0, 0);
+        Sprite wraithReference = levelOneWraithIdle != null && levelOneWraithIdle.Length > 0
+            ? levelOneWraithIdle[0] : null;
+        if (heroReference != null && wraithReference != null && renderer.sprite != null &&
+            heroReference.bounds.size.y > 0.001f &&
+            wraithReference.bounds.size.y > 0.001f && renderer.sprite.bounds.size.y > 0.001f)
         {
-            float matchingScale = heroReference.bounds.size.y / renderer.sprite.bounds.size.y;
+            float wraithWorldHeight = heroReference.bounds.size.y;
+            float matchingScale = wraithWorldHeight / renderer.sprite.bounds.size.y;
             visual.transform.localScale = Vector3.one * matchingScale;
         }
 
