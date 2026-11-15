@@ -187,9 +187,10 @@ public class DungeonTaleGame : MonoBehaviour
             visual.transform.localScale = Vector3.one * matchingScale;
         }
 
-        var collider = enemyObject.AddComponent<CircleCollider2D>();
+        // Use a box collider sized from the rendered Wraith sprite.
+        // DungeonEnemy synchronizes its dimensions after the visual is assigned.
+        var collider = enemyObject.AddComponent<BoxCollider2D>();
         collider.isTrigger = false;
-        collider.radius = 0.42f;
 
         var brain = enemyObject.AddComponent<DungeonEnemy>();
         brain.game = this;
