@@ -314,7 +314,7 @@ public static class DungeonTaleBootstrap
             if (!importer.alphaIsTransparency) { importer.alphaIsTransparency = true; changed = true; }
             if (importer.mipmapEnabled) { importer.mipmapEnabled = false; changed = true; }
             if (importer.filterMode != FilterMode.Point) { importer.filterMode = FilterMode.Point; changed = true; }
-            if (importer.spritePixelsPerUnit != 32f) { importer.spritePixelsPerUnit = 32f; changed = true; }
+            if (importer.spritePixelsPerUnit != 64f) { importer.spritePixelsPerUnit = 64f; changed = true; }
             if (changed) importer.SaveAndReimport();
 
             Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
