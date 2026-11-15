@@ -152,13 +152,15 @@ public class DungeonTaleGame : MonoBehaviour
             new Vector2(6, -9), new Vector2(-2, -8), new Vector2(-8, -8),
             new Vector2(-13, -4), new Vector2(2, 3), new Vector2(10, 2)
         };
-        int count = Mathf.Clamp(3 + currentWave * 2 + Mathf.Max(0, dungeonLevel - 1), 1, positions.Length);
+        // Level 1 is the tutorial difficulty: small groups and low enemy HP.
+        // Later levels add more enemies and increase their health and speed.
+        int count = Mathf.Clamp(2 + currentWave + (dungeonLevel - 1) * 2, 1, positions.Length);
         enemiesRemaining = count;
         for (int i = 0; i < count; i++)
         {
             int variant = (i + currentWave - 1) % 3;
-            float speed = 1.5f + variant * 0.15f + (dungeonLevel - 1) * 0.04f;
-            int hp = 2 + variant + currentWave - 1 + Mathf.Max(0, dungeonLevel - 1) / 2;
+            float speed = 1.35f + variant * 0.10f;
+            int hp = 1 + variant + currentWave - 1;
             SpawnWraith(variant, positions[i], speed, hp);
         }
         ShowMessage("WAVE " + currentWave + " / " + WavesPerLevel + " - DEFEAT ALL WRAITHS!");
