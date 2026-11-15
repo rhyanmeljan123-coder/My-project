@@ -58,6 +58,7 @@ public static class DungeonTaleBootstrap
         game.orcWalkFrames = FindCharacterFrames("Orc", "Walk");
         game.orcAttackFrames = FindCharacterFrames("Orc", "Attack01");
         AssignWraithAssets(game);
+        AssignSlimeAssets(game);
     }
     [MenuItem("Dungeon Tale/Build Playable Dungeon Scene")]
     public static void Build()
@@ -305,6 +306,92 @@ public static class DungeonTaleBootstrap
     }
 
     static int CountFrames(Sprite[] frames) { return frames == null ? 0 : frames.Length; }
+
+    static Sprite[] FindSlimeFrames(int variant, string animation)
+    {
+        string id = "Slime" + variant;
+        string fileSuffix = animation == "Walk" ? "Walk" : animation;
+        string path = "Assets/slime/PNG/" + id + "/With_shadow/" +
+            id + "_" + fileSuffix + "_with_shadow.png";
+        var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+        if (importer == null)
+        {
+            Debug.LogWarning("Dungeon Tale: Missing slime animation sheet: " + path);
+            return new Sprite[0];
+        }
+
+        var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        if (texture == null) return new Sprite[0];
+
+        // The slime sheets use 64x64 frames in four directional rows.
+        // Use the first row so the monster keeps one consistent facing.
+        const int cellSize = 64;
+        int columns = texture.width / cellSize;
+        int rows = texture.height / cellSize;
+        if (columns <= 0 || rows <= 0) return new Sprite[0];
+
+        var metadata = new System.Collections.Generic.List<SpriteMetaData>();
+        string baseName = System.IO.Path.GetFileNameWithoutExtension(path);
+        for (int row = 0; row < rows; row++)
+        for (int column = 0; column < columns; column++)
+        {
+            metadata.Add(new SpriteMetaData
+            {
+                name = baseName + "_" + (row * columns + column),
+                rect = new Rect(column * cellSize, texture.height - (row + 1) * cellSize, cellSize, cellSize),
+                alignment = (int)SpriteAlignment.BottomCenter,
+                pivot = new Vector2(0.5f, 0.12f)
+            });
+        }
+
+        importer.textureType = TextureImporterType.Sprite;
+        importer.spriteImportMode = SpriteImportMode.Multiple;
+        importer.spritesheet = metadata.ToArray();
+        importer.alphaIsTransparency = true;
+        importer.mipmapEnabled = false;
+        importer.filterMode = FilterMode.Point;
+        importer.spritePixelsPerUnit = 64f;
+        importer.SaveAndReimport();
+
+        var frames = new System.Collections.Generic.List<Sprite>();
+        foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(path))
+            if (asset is Sprite sprite) frames.Add(sprite);
+        frames.Sort((a, b) => EditorUtility.NaturalCompare(a.name, b.name));
+
+        var firstDirection = new System.Collections.Generic.List<Sprite>();
+        for (int i = 0; i < frames.Count && i < columns; i++)
+            firstDirection.Add(frames[i]);
+        return firstDirection.ToArray();
+    }
+
+    static void AssignSlimeAssets(DungeonTaleGame game)
+    {
+        for (int variant = 1; variant <= 3; variant++)
+        {
+            Sprite[][] sets = new Sprite[5][];
+            sets[0] = FindSlimeFrames(variant, "Idle");
+            sets[1] = FindSlimeFrames(variant, "Walk");
+            sets[2] = FindSlimeFrames(variant, "Attack");
+            sets[3] = FindSlimeFrames(variant, "Hurt");
+            sets[4] = FindSlimeFrames(variant, "Death");
+
+            if (variant == 1)
+            {
+                game.slime01IdleFrames = sets[0]; game.slime01WalkFrames = sets[1];
+                game.slime01AttackFrames = sets[2]; game.slime01HurtFrames = sets[3]; game.slime01DeathFrames = sets[4];
+            }
+            else if (variant == 2)
+            {
+                game.slime02IdleFrames = sets[0]; game.slime02WalkFrames = sets[1];
+                game.slime02AttackFrames = sets[2]; game.slime02HurtFrames = sets[3]; game.slime02DeathFrames = sets[4];
+            }
+            else
+            {
+                game.slime03IdleFrames = sets[0]; game.slime03WalkFrames = sets[1];
+                game.slime03AttackFrames = sets[2]; game.slime03HurtFrames = sets[3]; game.slime03DeathFrames = sets[4];
+            }
+        }
+    }
 
     static Sprite[] FindWraithFrames(int variant, string animation, int frameCount)
     {
