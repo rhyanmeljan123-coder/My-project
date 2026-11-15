@@ -174,7 +174,7 @@ public class DungeonEnemy : MonoBehaviour
         }
 
         float distance = Vector2.Distance(transform.position, target.position);
-        if (distance <= 0.9f)
+        if (distance <= 0.18f)
         {
             path.Clear();
             return;
