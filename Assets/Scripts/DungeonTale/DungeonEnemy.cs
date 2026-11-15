@@ -413,6 +413,7 @@ public class DungeonEnemy : MonoBehaviour
     }
     public void TakeHit(int damage)
     {
+        DungeonTaleAudio.PlaySfx("enemy_hit");
         health -= Mathf.Max(1, damage);
         if (health <= 0)
         {
