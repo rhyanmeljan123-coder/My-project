@@ -37,7 +37,13 @@ public static class DungeonTaleBootstrap
 
     static void AssignCharacterSprites(DungeonTaleGame game)
     {
-        AssignCharacterSprites(game);
+        game.soldierIdleSprite = FindCharacterSprite("Soldier", "Idle");
+        game.soldierWalkFrames = FindCharacterFrames("Soldier", "Walk");
+        game.soldierAttackFrames = FindCharacterFrames("Soldier", "Attack01");
+        game.orcIdleSprite = FindCharacterSprite("Orc", "Idle");
+        game.orcWalkFrames = FindCharacterFrames("Orc", "Walk");
+        game.orcAttackFrames = FindCharacterFrames("Orc", "Attack01");
+        AssignWraithAssets(game);
     }
     [MenuItem("Dungeon Tale/Build Playable Dungeon Scene")]
     public static void Build()
@@ -309,11 +315,21 @@ public static class DungeonTaleBootstrap
         for (int i = 0; i < 3; i++)
         {
             int variant = i + 1;
-            game.wraithIdleFrames[i] = FindWraithFrames(variant, "Idle", 12);
-            game.wraithWalkFrames[i] = FindWraithFrames(variant, "Walking", 12);
-            game.wraithAttackFrames[i] = FindWraithFrames(variant, "Attacking", 12);
-            game.wraithHurtFrames[i] = FindWraithFrames(variant, "Hurt", 12);
-            game.wraithDeathFrames[i] = FindWraithFrames(variant, "Dying", 15);
+        game.wraith01IdleFrames = FindWraithFrames(1, "Idle", 12);
+        game.wraith01WalkFrames = FindWraithFrames(1, "Walking", 12);
+        game.wraith01AttackFrames = FindWraithFrames(1, "Attacking", 12);
+        game.wraith01HurtFrames = FindWraithFrames(1, "Hurt", 12);
+        game.wraith01DeathFrames = FindWraithFrames(1, "Dying", 15);
+        game.wraith02IdleFrames = FindWraithFrames(2, "Idle", 12);
+        game.wraith02WalkFrames = FindWraithFrames(2, "Walking", 12);
+        game.wraith02AttackFrames = FindWraithFrames(2, "Attacking", 12);
+        game.wraith02HurtFrames = FindWraithFrames(2, "Hurt", 12);
+        game.wraith02DeathFrames = FindWraithFrames(2, "Dying", 15);
+        game.wraith03IdleFrames = FindWraithFrames(3, "Idle", 12);
+        game.wraith03WalkFrames = FindWraithFrames(3, "Walking", 12);
+        game.wraith03AttackFrames = FindWraithFrames(3, "Attacking", 12);
+        game.wraith03HurtFrames = FindWraithFrames(3, "Hurt", 12);
+        game.wraith03DeathFrames = FindWraithFrames(3, "Dying", 15);
         }
     }
 
