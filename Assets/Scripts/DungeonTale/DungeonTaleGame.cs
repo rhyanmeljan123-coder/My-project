@@ -173,11 +173,19 @@ public class DungeonTaleGame : MonoBehaviour
 
         var visual = new GameObject("Wraith Visual");
         visual.transform.SetParent(enemyObject.transform, false);
-        visual.transform.localScale = Vector3.one; // Match the hero's default world scale.
         var renderer = visual.AddComponent<SpriteRenderer>();
         Sprite[] idle = GetWraithFrames(variant, 0);
         renderer.sprite = idle != null && idle.Length > 0 ? idle[0] : null;
         renderer.sortingOrder = 9;
+
+        // Match visible sprite height to the selected hero, not transform scale.
+        Sprite heroReference = playerIdleSprite != null ? playerIdleSprite : heroSprite;
+        if (heroReference != null && renderer.sprite != null &&
+            heroReference.bounds.size.y > 0.001f && renderer.sprite.bounds.size.y > 0.001f)
+        {
+            float matchingScale = heroReference.bounds.size.y / renderer.sprite.bounds.size.y;
+            visual.transform.localScale = Vector3.one * matchingScale;
+        }
 
         var collider = enemyObject.AddComponent<CircleCollider2D>();
         collider.isTrigger = false;
