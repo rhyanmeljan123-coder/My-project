@@ -49,30 +49,8 @@ public static class DungeonTaleBootstrap
             Debug.Log("Dungeon Tale: Wraith sprites assigned and scene saved. Idle frames loaded: " + wraithFrames + ".");
     }
 
-    static void AssignUiAssets(DungeonTaleGame game)
-    {
-        game.uiMainMenuAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ui/PNG/Main_menu.png");
-        game.uiButtonsAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ui/PNG/Buttons.png");
-        game.uiMainTilesAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ui/PNG/Main_tiles.png");
-        game.uiActionPanelAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ui/PNG/Action_panel.png");
-        game.uiCharacterPanelAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ui/PNG/character_panel.png");
-        game.uiInventoryAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ui/PNG/Inventory.png");
-        game.uiEquipmentAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ui/PNG/Equipment.png");
-        game.uiIconsAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ui/PNG/Icons.png");
-        game.uiLevelsAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ui/PNG/Levels.png");
-        game.uiSettingsAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ui/PNG/Settings.png");
-        game.uiShopAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ui/PNG/Shop.png");
-        game.uiCraftAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ui/PNG/Craft.png");
-        game.uiWinLoseAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ui/PNG/Win_loose.png");
-        game.uiCircleMenuAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ui/PNG/Circle_menu.png");
-        game.uiTextAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ui/PNG/Text1.png");
-        game.uiNumbersAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ui/PNG/Numbers.png");
-        game.uiDecorativeAtlas = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/ui/PNG/Decorative_cracks.png");
-    }
-
     static void AssignCharacterSprites(DungeonTaleGame game)
     {
-        AssignUiAssets(game);
         game.soldierIdleSprite = FindCharacterSprite("Soldier", "Idle");
         game.soldierWalkFrames = FindCharacterFrames("Soldier", "Walk");
         game.soldierAttackFrames = FindCharacterFrames("Soldier", "Attack01");
@@ -149,7 +127,6 @@ public static class DungeonTaleBootstrap
         game.orcAttackFrames = FindCharacterFrames("Orc", "Attack01");
         AssignWraithAssets(game);
         AssignSlimeAssets(game);
-        AssignUiAssets(game);
         game.slimeSprite = FindSprite("Char_Slime");
         game.skeletonSprite = FindSprite("Char_Skeletone");
         game.batSprite = FindSprite("Char_Bat");
@@ -313,7 +290,6 @@ public static class DungeonTaleBootstrap
         game.orcAttackFrames = FindCharacterFrames("Orc", "Attack01");
         AssignWraithAssets(game);
         AssignSlimeAssets(game);
-        AssignUiAssets(game);
         int wraithFramesLoaded = CountFrames(game.wraith01IdleFrames) + CountFrames(game.wraith02IdleFrames) + CountFrames(game.wraith03IdleFrames);
         if (wraithFramesLoaded == 0)
             Debug.LogError("Dungeon Tale: Wraith idle sprites are still missing. Verify the CraftPix PNG folder path.");
