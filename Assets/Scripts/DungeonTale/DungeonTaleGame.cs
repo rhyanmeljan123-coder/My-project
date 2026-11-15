@@ -26,11 +26,21 @@ public class DungeonTaleGame : MonoBehaviour
     public Sprite[] soldierAttackFrames, orcAttackFrames;
     [HideInInspector] public int selectedCharacter;
     public Sprite slimeSprite, skeletonSprite, batSprite, ratSprite, coinSprite, torchSprite, spikeSprite, doorSprite;
-    public Sprite[][] wraithIdleFrames = new Sprite[3][];
-    public Sprite[][] wraithWalkFrames = new Sprite[3][];
-    public Sprite[][] wraithAttackFrames = new Sprite[3][];
-    public Sprite[][] wraithHurtFrames = new Sprite[3][];
-    public Sprite[][] wraithDeathFrames = new Sprite[3][];
+    public Sprite[] wraith01IdleFrames;
+    public Sprite[] wraith01WalkFrames;
+    public Sprite[] wraith01AttackFrames;
+    public Sprite[] wraith01HurtFrames;
+    public Sprite[] wraith01DeathFrames;
+    public Sprite[] wraith02IdleFrames;
+    public Sprite[] wraith02WalkFrames;
+    public Sprite[] wraith02AttackFrames;
+    public Sprite[] wraith02HurtFrames;
+    public Sprite[] wraith02DeathFrames;
+    public Sprite[] wraith03IdleFrames;
+    public Sprite[] wraith03WalkFrames;
+    public Sprite[] wraith03AttackFrames;
+    public Sprite[] wraith03HurtFrames;
+    public Sprite[] wraith03DeathFrames;
     [Header("2D Pixel Dungeon Pack")]
     public Sprite packChestSprite, packTorchSprite, packSpikeSprite, packCoinSprite, packFlaskSprite;
     public Sprite potionRed, potionBlue, potionGreen, keySprite, swordSprite, shieldSprite, skullSprite, vaseSprite, chainSprite, boneSprite, carpetSprite;
@@ -130,6 +140,31 @@ public class DungeonTaleGame : MonoBehaviour
         SpawnWraith(2, new Vector2(4, 9), 1.9f, 3);
     }
 
+    Sprite[] GetWraithFrames(int variant, int animation)
+    {
+        if (variant == 0)
+        {
+            if (animation == 0) return wraith01IdleFrames;
+            if (animation == 1) return wraith01WalkFrames;
+            if (animation == 2) return wraith01AttackFrames;
+            if (animation == 3) return wraith01HurtFrames;
+            return wraith01DeathFrames;
+        }
+        if (variant == 1)
+        {
+            if (animation == 0) return wraith02IdleFrames;
+            if (animation == 1) return wraith02WalkFrames;
+            if (animation == 2) return wraith02AttackFrames;
+            if (animation == 3) return wraith02HurtFrames;
+            return wraith02DeathFrames;
+        }
+        if (animation == 0) return wraith03IdleFrames;
+        if (animation == 1) return wraith03WalkFrames;
+        if (animation == 2) return wraith03AttackFrames;
+        if (animation == 3) return wraith03HurtFrames;
+        return wraith03DeathFrames;
+    }
+
     void SpawnWraith(int variant, Vector2 pos, float enemySpeed, int hp)
     {
         var enemyObject = new GameObject("Wraith " + (variant + 1));
@@ -140,7 +175,7 @@ public class DungeonTaleGame : MonoBehaviour
         visual.transform.SetParent(enemyObject.transform, false);
         visual.transform.localScale = Vector3.one * 0.72f;
         var renderer = visual.AddComponent<SpriteRenderer>();
-        Sprite[] idle = wraithIdleFrames != null && variant < wraithIdleFrames.Length ? wraithIdleFrames[variant] : null;
+        Sprite[] idle = GetWraithFrames(variant, 0);
         renderer.sprite = idle != null && idle.Length > 0 ? idle[0] : null;
         renderer.sortingOrder = 9;
 
@@ -153,12 +188,8 @@ public class DungeonTaleGame : MonoBehaviour
         brain.target = player;
         brain.speed = enemySpeed + (dungeonLevel - 1) * 0.06f;
         brain.SetHealth(hp + dungeonLevel - 1);
-        brain.SetWraithAnimations(
-            idle,
-            wraithWalkFrames != null && variant < wraithWalkFrames.Length ? wraithWalkFrames[variant] : null,
-            wraithAttackFrames != null && variant < wraithAttackFrames.Length ? wraithAttackFrames[variant] : null,
-            wraithHurtFrames != null && variant < wraithHurtFrames.Length ? wraithHurtFrames[variant] : null,
-            wraithDeathFrames != null && variant < wraithDeathFrames.Length ? wraithDeathFrames[variant] : null);
+        brain.SetWraithAnimations(idle, GetWraithFrames(variant, 1), GetWraithFrames(variant, 2),
+            GetWraithFrames(variant, 3), GetWraithFrames(variant, 4));
         brain.xpReward = 25 + variant * 5;
         brain.coinDropChance = 0.30f + variant * 0.05f;
         brain.potionDropChance = 0.10f + variant * 0.02f;
