@@ -11,11 +11,25 @@ public static class DungeonTaleBootstrap
     {
         EditorApplication.delayCall += AutoAssignCharacterAssets;
         EditorSceneManager.sceneOpened += OnSceneOpened;
+        EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
     }
 
     static void OnSceneOpened(UnityEngine.SceneManagement.Scene scene, OpenSceneMode mode)
     {
         EditorApplication.delayCall += AutoAssignCharacterAssets;
+    }
+
+    static void OnPlayModeStateChanged(PlayModeStateChange state)
+    {
+        if (state != PlayModeStateChange.ExitingEditMode) return;
+        var game = UnityEngine.Object.FindObjectOfType<DungeonTaleGame>();
+        if (game == null) return;
+        AssignCharacterSprites(game);
+        EditorUtility.SetDirty(game);
+        if (game.gameObject.scene.IsValid() && game.gameObject.scene.isLoaded)
+            EditorSceneManager.SaveScene(game.gameObject.scene);
+        Debug.Log("Dungeon Tale: Wraiths prepared before Play Mode. Loaded idle frames: " +
+            (CountFrames(game.wraith01IdleFrames) + CountFrames(game.wraith02IdleFrames) + CountFrames(game.wraith03IdleFrames)));
     }
 
     static void AutoAssignCharacterAssets()
@@ -273,6 +287,11 @@ public static class DungeonTaleBootstrap
         game.orcWalkFrames = FindCharacterFrames("Orc", "Walk");
         game.orcAttackFrames = FindCharacterFrames("Orc", "Attack01");
         AssignWraithAssets(game);
+        int wraithFramesLoaded = CountFrames(game.wraith01IdleFrames) + CountFrames(game.wraith02IdleFrames) + CountFrames(game.wraith03IdleFrames);
+        if (wraithFramesLoaded == 0)
+            Debug.LogError("Dungeon Tale: Wraith idle sprites are still missing. Verify the CraftPix PNG folder path.");
+        else
+            Debug.Log("Dungeon Tale: Successfully assigned " + wraithFramesLoaded + " Wraith idle frames.");
         EditorUtility.SetDirty(game);
         EditorSceneManager.MarkSceneDirty(game.gameObject.scene);
         EditorSceneManager.SaveScene(game.gameObject.scene);
