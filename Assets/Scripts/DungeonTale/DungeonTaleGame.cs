@@ -192,6 +192,13 @@ public class DungeonTaleGame : MonoBehaviour
         var collider = enemyObject.AddComponent<BoxCollider2D>();
         collider.isTrigger = false;
 
+        // Enemies should keep their solid collider for walls, but must not
+        // physically shove the player away on contact. Melee range is handled
+        // by the distance check in DungeonEnemy.Update().
+        Collider2D playerCollider = player != null ? player.GetComponent<Collider2D>() : null;
+        if (playerCollider != null)
+            Physics2D.IgnoreCollision(collider, playerCollider, true);
+
         var brain = enemyObject.AddComponent<DungeonEnemy>();
         brain.game = this;
         brain.target = player;
