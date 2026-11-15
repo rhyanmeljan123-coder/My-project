@@ -173,7 +173,7 @@ public class DungeonTaleGame : MonoBehaviour
 
         var visual = new GameObject("Wraith Visual");
         visual.transform.SetParent(enemyObject.transform, false);
-        visual.transform.localScale = Vector3.one * 0.72f;
+        visual.transform.localScale = Vector3.one * 1.15f;
         var renderer = visual.AddComponent<SpriteRenderer>();
         Sprite[] idle = GetWraithFrames(variant, 0);
         renderer.sprite = idle != null && idle.Length > 0 ? idle[0] : null;
