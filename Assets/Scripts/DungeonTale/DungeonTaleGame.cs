@@ -73,6 +73,8 @@ public class DungeonTaleGame : MonoBehaviour
     private Text overlayTitle, overlaySubtitle;
     private Button primaryOverlayButton, secondaryOverlayButton;
     private GameObject menuPanel, characterPanel, settingsPanel, endPanel;
+    private GameObject inventoryPanel, equipmentPanel;
+    private Text inventoryDetails, equipmentDetails;
     private Text endTitle, endSubtitle, characterSelectionLabel, qualityLabel, fullscreenLabel;
     private Button continueButton, qualityButton, fullscreenButton;
     private Slider masterVolumeSlider;
@@ -408,6 +410,7 @@ public class DungeonTaleGame : MonoBehaviour
         message.rectTransform.anchorMin=new Vector2(.5f,0);message.rectTransform.anchorMax=new Vector2(.5f,0);
         message.text="WASD / Arrows: Move     SPACE: Attack     E: Use potion";
         CreateGameOverlay(canvas.transform);
+        CreateInventoryEquipmentPanels(canvas.transform);
         CreateLevelClearBanner(canvas.transform);
         CreateExperienceBar(canvas.transform);
         CreateLevelUpPanel(canvas.transform);
@@ -487,7 +490,7 @@ public class DungeonTaleGame : MonoBehaviour
         image.type = Image.Type.Sliced;
         image.color = Color.white;
         image.raycastTarget = false;
-        var slots = new[] { "1  ATTACK", "2  POTION", "I  ITEMS" };
+        var slots = new[] { "SPACE  ATTACK", "E  POTION", "I  ITEMS  /  C  GEAR" };
         for (int i = 0; i < slots.Length; i++)
         {
             var label = MakeCenteredText(bar.transform, "Action Slot " + (i + 1),
@@ -495,6 +498,79 @@ public class DungeonTaleGame : MonoBehaviour
             label.text = slots[i];
             label.color = new Color(0.88f, 0.78f, 0.55f, 1f);
             label.raycastTarget = false;
+        }
+    }
+
+    void CreateInventoryEquipmentPanels(Transform parent)
+    {
+        inventoryPanel = CreateOverlayPanel(parent, "Inventory Window", new Vector2(660, 520));
+        var inventoryImage = inventoryPanel.GetComponent<Image>();
+        if (uiInventoryFrameSprite != null)
+        {
+            inventoryImage.sprite = uiInventoryFrameSprite;
+            inventoryImage.type = Image.Type.Sliced;
+        }
+        MakeCenteredText(inventoryPanel.transform, "Inventory Heading", new Vector2(0, 190),
+            new Vector2(560, 55), 34, FontStyle.Bold).text = "INVENTORY";
+        inventoryDetails = MakeCenteredText(inventoryPanel.transform, "Inventory Details",
+            new Vector2(0, 15), new Vector2(500, 270), 24, FontStyle.Bold);
+        inventoryDetails.color = new Color(0.24f, 0.19f, 0.12f, 1f);
+        inventoryDetails.alignment = TextAnchor.MiddleLeft;
+        var inventoryClose = MakeOverlayButton(inventoryPanel.transform, "Close Inventory",
+            new Vector2(0, -205), "CLOSE");
+        inventoryClose.onClick.AddListener(() => inventoryPanel.SetActive(false));
+        inventoryPanel.SetActive(false);
+
+        equipmentPanel = CreateOverlayPanel(parent, "Equipment Window", new Vector2(660, 520));
+        var equipmentImage = equipmentPanel.GetComponent<Image>();
+        if (uiEquipmentFrameSprite != null)
+        {
+            equipmentImage.sprite = uiEquipmentFrameSprite;
+            equipmentImage.type = Image.Type.Sliced;
+        }
+        MakeCenteredText(equipmentPanel.transform, "Equipment Heading", new Vector2(0, 190),
+            new Vector2(560, 55), 34, FontStyle.Bold).text = "EQUIPMENT";
+        equipmentDetails = MakeCenteredText(equipmentPanel.transform, "Equipment Details",
+            new Vector2(0, 15), new Vector2(500, 270), 24, FontStyle.Bold);
+        equipmentDetails.color = new Color(0.24f, 0.19f, 0.12f, 1f);
+        equipmentDetails.alignment = TextAnchor.MiddleLeft;
+        var equipmentClose = MakeOverlayButton(equipmentPanel.transform, "Close Equipment",
+            new Vector2(0, -205), "CLOSE");
+        equipmentClose.onClick.AddListener(() => equipmentPanel.SetActive(false));
+        equipmentPanel.SetActive(false);
+    }
+
+    void ToggleInventoryPanel()
+    {
+        if (inventoryPanel == null || !gameStarted) return;
+        bool show = !inventoryPanel.activeSelf;
+        inventoryPanel.SetActive(show);
+        if (equipmentPanel != null) equipmentPanel.SetActive(false);
+        if (show)
+        {
+            inventoryDetails.text = "GOLD COINS     " + coins +
+                "\nPOTIONS        " + potions +
+                "\nDUNGEON KEY    " + (hasKey ? "COLLECTED" : "NOT FOUND") +
+                "\n\nPLAYER LEVEL   " + playerLevel +
+                "\nEXPERIENCE     " + experience + " / " + experienceToNextLevel +
+                "\nDUNGEON        " + dungeonLevel + "   WAVE " + currentWave + "/" + WavesPerLevel;
+        }
+    }
+
+    void ToggleEquipmentPanel()
+    {
+        if (equipmentPanel == null || !gameStarted) return;
+        bool show = !equipmentPanel.activeSelf;
+        equipmentPanel.SetActive(show);
+        if (inventoryPanel != null) inventoryPanel.SetActive(false);
+        if (show)
+        {
+            equipmentDetails.text = "WEAPON DAMAGE      " + attackPower +
+                "\nCRITICAL CHANCE    " + Mathf.RoundToInt(criticalChance * 100f) + "%" +
+                "\nMOVEMENT BONUS     +" + playerSpeedBonus.ToString("0.0") +
+                "\nSHIELD CHARGES     " + shieldCharges + " / " + maxShieldCharges +
+                "\nDODGE CHANCE       " + Mathf.RoundToInt(dodgeChance * 100f) + "%" +
+                "\nMAX HEALTH         " + maxHealth;
         }
     }
 
@@ -1571,6 +1647,8 @@ public class DungeonTaleGame : MonoBehaviour
 
         if (!gameStarted || Keyboard.current == null) return;
         if (Keyboard.current.eKey.wasPressedThisFrame) UsePotion();
+        if (Keyboard.current.iKey.wasPressedThisFrame) ToggleInventoryPanel();
+        if (Keyboard.current.cKey.wasPressedThisFrame) ToggleEquipmentPanel();
     }
     public bool IsFinished(){return finished || !gameStarted || upgradeChoiceOpen;}
 
