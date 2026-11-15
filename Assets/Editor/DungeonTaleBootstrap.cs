@@ -24,15 +24,15 @@ public static class DungeonTaleBootstrap
         var game = UnityEngine.Object.FindObjectOfType<DungeonTaleGame>();
         if (game == null) return;
         AssignCharacterSprites(game);
-        if (game.soldierIdleSprite == null || game.orcIdleSprite == null)
-        {
-            Debug.LogWarning("Dungeon Tale: Soldier/Orc sprite sheets were not imported yet. Check the Tiny RPG Character Asset Pack folder is inside Assets.");
-            return;
-        }
         EditorUtility.SetDirty(game);
         if (game.gameObject.scene.IsValid() && game.gameObject.scene.isLoaded)
             EditorSceneManager.SaveScene(game.gameObject.scene);
-        Debug.Log("Dungeon Tale: Soldier and Orc character sprites assigned to the open scene.");
+
+        int wraithFrames = CountFrames(game.wraith01IdleFrames) + CountFrames(game.wraith02IdleFrames) + CountFrames(game.wraith03IdleFrames);
+        if (wraithFrames == 0)
+            Debug.LogError("Dungeon Tale: No Wraith sprites were loaded. Check that the CraftPix Wraith PNG folder is inside Assets/craftpix-net-563568-free-wraith-tiny-style-2d-sprites/PNG/.");
+        else
+            Debug.Log("Dungeon Tale: Wraith sprites assigned and scene saved. Idle frames loaded: " + wraithFrames + ".");
     }
 
     static void AssignCharacterSprites(DungeonTaleGame game)
@@ -276,10 +276,16 @@ public static class DungeonTaleBootstrap
         EditorUtility.SetDirty(game);
         EditorSceneManager.MarkSceneDirty(game.gameObject.scene);
         EditorSceneManager.SaveScene(game.gameObject.scene);
+        int wraithCount = CountFrames(game.wraith01IdleFrames) + CountFrames(game.wraith02IdleFrames) + CountFrames(game.wraith03IdleFrames);
         EditorUtility.DisplayDialog("Dungeon Tale",
             "Character assets assigned. Soldier frames: " + game.soldierWalkFrames.Length +
-            ", Orc frames: " + game.orcWalkFrames.Length + ".", "OK");
+            ", Orc frames: " + game.orcWalkFrames.Length +
+            ", Wraith idle frames: " + wraithCount + ".\n\n" +
+            (wraithCount > 0 ? "Wraith sprites are ready. Press Play." : "WARNING: No Wraith sprites found. Check the CraftPix folder is inside Assets."),
+            "OK");
     }
+
+    static int CountFrames(Sprite[] frames) { return frames == null ? 0 : frames.Length; }
 
     static Sprite[] FindWraithFrames(int variant, string animation, int frameCount)
     {
@@ -292,19 +298,31 @@ public static class DungeonTaleBootstrap
             if (animation == "Walking") fileName = id + "_Moving Forward_" + i.ToString("000") + ".png";
             else if (animation == "Attacking") fileName = id + "_Attack_" + i.ToString("000") + ".png";
             else if (animation == "Dying") fileName = id + "_Dying_" + i.ToString("000") + ".png";
-            else if (animation == "Hurt") fileName = id + "_Hurt_" + i.ToString("000") + ".png";
-            else fileName = id + "_Idle_" + i.ToString("000") + ".png";
+            else fileName = id + "_" + animation + "_" + i.ToString("000") + ".png";
 
             string path = folder + fileName;
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
-            if (importer == null) continue;
-            if (importer.textureType != TextureImporterType.Sprite || importer.spriteImportMode != SpriteImportMode.Single)
+            if (importer == null)
             {
-                importer.textureType = TextureImporterType.Sprite;
-                importer.spriteImportMode = SpriteImportMode.Single;
-                importer.SaveAndReimport();
+                Debug.LogWarning("Dungeon Tale: Missing Wraith frame: " + path);
+                continue;
             }
+
+            bool changed = false;
+            if (importer.textureType != TextureImporterType.Sprite) { importer.textureType = TextureImporterType.Sprite; changed = true; }
+            if (importer.spriteImportMode != SpriteImportMode.Single) { importer.spriteImportMode = SpriteImportMode.Single; changed = true; }
+            if (!importer.alphaIsTransparency) { importer.alphaIsTransparency = true; changed = true; }
+            if (importer.mipmapEnabled) { importer.mipmapEnabled = false; changed = true; }
+            if (importer.filterMode != FilterMode.Point) { importer.filterMode = FilterMode.Point; changed = true; }
+            if (importer.spritePixelsPerUnit != 32f) { importer.spritePixelsPerUnit = 32f; changed = true; }
+            if (changed) importer.SaveAndReimport();
+
             Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sprite == null)
+            {
+                foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(path))
+                    if (asset is Sprite loaded) { sprite = loaded; break; }
+            }
             if (sprite != null) result.Add(sprite);
         }
         return result.ToArray();
