@@ -26,6 +26,11 @@ public class DungeonTaleGame : MonoBehaviour
     public Sprite[] soldierAttackFrames, orcAttackFrames;
     [HideInInspector] public int selectedCharacter;
     public Sprite slimeSprite, skeletonSprite, batSprite, ratSprite, coinSprite, torchSprite, spikeSprite, doorSprite;
+    public Sprite[][] wraithIdleFrames = new Sprite[3][];
+    public Sprite[][] wraithWalkFrames = new Sprite[3][];
+    public Sprite[][] wraithAttackFrames = new Sprite[3][];
+    public Sprite[][] wraithHurtFrames = new Sprite[3][];
+    public Sprite[][] wraithDeathFrames = new Sprite[3][];
     [Header("2D Pixel Dungeon Pack")]
     public Sprite packChestSprite, packTorchSprite, packSpikeSprite, packCoinSprite, packFlaskSprite;
     public Sprite potionRed, potionBlue, potionGreen, keySprite, swordSprite, shieldSprite, skullSprite, vaseSprite, chainSprite, boneSprite, carpetSprite;
@@ -113,33 +118,50 @@ public class DungeonTaleGame : MonoBehaviour
         Place(packChestSprite,new Vector2(13,-8),1.25f,6);
     }
     void Place(Sprite s, Vector2 p, float scale, int order) { if(!s)return; var g=new GameObject("Dungeon Decoration");dungeonObjects.Add(g);g.transform.position=p;g.transform.localScale=Vector3.one*scale;var r=g.AddComponent<SpriteRenderer>();r.sprite=s;r.sortingOrder=order; }
-    void CreateEnemies() {
-        SpawnEnemy(slimeSprite,new Vector2(-8,7),1.7f,2);
-        SpawnEnemy(slimeSprite,new Vector2(7,7),1.7f,2);
-        SpawnEnemy(skeletonSprite,new Vector2(10,2),1.25f,3);
-        SpawnEnemy(skeletonSprite,new Vector2(7,-7),1.25f,3);
-        SpawnEnemy(batSprite,new Vector2(-8,-7),2.1f,1);
-        SpawnEnemy(batSprite,new Vector2(12,-3),2.1f,1);
-        SpawnEnemy(ratSprite,new Vector2(-12,5),2.4f,1);
-        SpawnEnemy(ratSprite,new Vector2(4,9),2.4f,1);
+    void CreateEnemies()
+    {
+        SpawnWraith(0, new Vector2(-8, 7), 1.55f, 2);
+        SpawnWraith(1, new Vector2(7, 7), 1.7f, 3);
+        SpawnWraith(2, new Vector2(10, 2), 1.85f, 2);
+        SpawnWraith(0, new Vector2(7, -7), 1.6f, 3);
+        SpawnWraith(1, new Vector2(-8, -7), 1.75f, 2);
+        SpawnWraith(2, new Vector2(12, -3), 1.9f, 2);
+        SpawnWraith(0, new Vector2(-12, 5), 1.65f, 2);
+        SpawnWraith(2, new Vector2(4, 9), 1.9f, 3);
     }
-    void SpawnEnemy(Sprite sprite, Vector2 pos, float speed, int hp) {
-        var e=new GameObject("Dungeon Monster");dungeonObjects.Add(e);e.transform.position=pos;
 
-        // Keep physics on the root and animate only this child visual.
-        var visual = new GameObject("Monster Visual");
-        visual.transform.SetParent(e.transform, false);
-        var sr=visual.AddComponent<SpriteRenderer>();sr.sprite=sprite? sprite:slimeSprite;sr.sortingOrder=9;
+    void SpawnWraith(int variant, Vector2 pos, float enemySpeed, int hp)
+    {
+        var enemyObject = new GameObject("Wraith " + (variant + 1));
+        dungeonObjects.Add(enemyObject);
+        enemyObject.transform.position = pos;
 
-        var collider = e.AddComponent<CircleCollider2D>();
-        collider.isTrigger=false;
-        var brain=e.AddComponent<DungeonEnemy>();
-        brain.game=this; brain.target=player; brain.speed=speed; brain.SetHealth(hp);
-        // Different monster families reward different XP and have different loot odds.
-        if (sprite == skeletonSprite) { brain.xpReward = 35; brain.coinDropChance = 0.45f; brain.potionDropChance = 0.18f; }
-        else if (sprite == batSprite) { brain.xpReward = 25; brain.coinDropChance = 0.32f; brain.potionDropChance = 0.12f; }
-        else if (sprite == ratSprite) { brain.xpReward = 15; brain.coinDropChance = 0.25f; brain.potionDropChance = 0.08f; }
-        else { brain.xpReward = 20; brain.coinDropChance = 0.30f; brain.potionDropChance = 0.10f; }
+        var visual = new GameObject("Wraith Visual");
+        visual.transform.SetParent(enemyObject.transform, false);
+        visual.transform.localScale = Vector3.one * 0.72f;
+        var renderer = visual.AddComponent<SpriteRenderer>();
+        Sprite[] idle = wraithIdleFrames != null && variant < wraithIdleFrames.Length ? wraithIdleFrames[variant] : null;
+        renderer.sprite = idle != null && idle.Length > 0 ? idle[0] : null;
+        renderer.sortingOrder = 9;
+
+        var collider = enemyObject.AddComponent<CircleCollider2D>();
+        collider.isTrigger = false;
+        collider.radius = 0.42f;
+
+        var brain = enemyObject.AddComponent<DungeonEnemy>();
+        brain.game = this;
+        brain.target = player;
+        brain.speed = enemySpeed + (dungeonLevel - 1) * 0.06f;
+        brain.SetHealth(hp + dungeonLevel - 1);
+        brain.SetWraithAnimations(
+            idle,
+            wraithWalkFrames != null && variant < wraithWalkFrames.Length ? wraithWalkFrames[variant] : null,
+            wraithAttackFrames != null && variant < wraithAttackFrames.Length ? wraithAttackFrames[variant] : null,
+            wraithHurtFrames != null && variant < wraithHurtFrames.Length ? wraithHurtFrames[variant] : null,
+            wraithDeathFrames != null && variant < wraithDeathFrames.Length ? wraithDeathFrames[variant] : null);
+        brain.xpReward = 25 + variant * 5;
+        brain.coinDropChance = 0.30f + variant * 0.05f;
+        brain.potionDropChance = 0.10f + variant * 0.02f;
         brain.xpReward += Mathf.Max(0, dungeonLevel - 1) * 3;
     }
     void CreatePickups() {
@@ -1211,14 +1233,7 @@ public class DungeonTaleGame : MonoBehaviour
         };
         int count = Mathf.Min(positions.Length, 8 + (dungeonLevel - 1) * 2);
         for (int i = 0; i < count; i++)
-        {
-            Sprite type = i % 4 == 0 ? skeletonSprite :
-                          i % 4 == 1 ? slimeSprite :
-                          i % 4 == 2 ? batSprite : ratSprite;
-            float speed = (type == batSprite ? 2.1f : type == ratSprite ? 2.4f :
-                           type == skeletonSprite ? 1.25f : 1.7f) + (dungeonLevel - 1) * 0.08f;
-            SpawnEnemy(type, positions[i], speed, (type == skeletonSprite ? 3 : 2) + dungeonLevel - 1);
-        }
+            SpawnWraith(i % 3, positions[i], 1.55f + (i % 3) * 0.15f, 2 + (i % 2));
         enemiesRemaining = count;
     }
 
