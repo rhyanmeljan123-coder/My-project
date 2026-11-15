@@ -73,6 +73,12 @@ public class DungeonTaleGame : MonoBehaviour
     private GameObject levelClearBanner;
     private Text levelClearTitle, levelClearSubtitle;
     private float levelClearBannerHideAt = -1f;
+    private int currentWave = 1;
+    private const int WavesPerLevel = 3;
+    private bool waitingForNextWave;
+    private float nextWaveStartAt;
+    private bool levelBonusPending;
+    private bool showingLevelBonusChoice;
     public int playerLevel = 1, experience = 0, experienceToNextLevel = 100, attackPower = 1;
     public float criticalChance = 0.05f;
     private float playerSpeedBonus;
@@ -102,7 +108,7 @@ public class DungeonTaleGame : MonoBehaviour
         bool launchNewGame = PlayerPrefs.GetInt(SavePrefix + "StartImmediately", 0) == 1;
         PlayerPrefs.DeleteKey(SavePrefix + "StartImmediately");
         selectedCharacter = Mathf.Clamp(PlayerPrefs.GetInt(SavePrefix + "Character", 0), 0, 2);
-        CreatePlayer(); DecorateDungeon(); CreateEnemies(); CreatePickups(); CreateTraps(); CreateExit(); CreateUI(); UpdateHud();
+        CreatePlayer(); DecorateDungeon(); CreateEnemies(); CreatePickups(); CreateTraps(); CreateUI(); UpdateHud();
         if (launchNewGame) BeginNewGame(); else ShowMainMenu();
     }
     void CreatePlayer() {
@@ -130,14 +136,33 @@ public class DungeonTaleGame : MonoBehaviour
     void Place(Sprite s, Vector2 p, float scale, int order) { if(!s)return; var g=new GameObject("Dungeon Decoration");dungeonObjects.Add(g);g.transform.position=p;g.transform.localScale=Vector3.one*scale;var r=g.AddComponent<SpriteRenderer>();r.sprite=s;r.sortingOrder=order; }
     void CreateEnemies()
     {
-        SpawnWraith(0, new Vector2(-8, 7), 1.55f, 2);
-        SpawnWraith(1, new Vector2(7, 7), 1.7f, 3);
-        SpawnWraith(2, new Vector2(10, 2), 1.85f, 2);
-        SpawnWraith(0, new Vector2(7, -7), 1.6f, 3);
-        SpawnWraith(1, new Vector2(-8, -7), 1.75f, 2);
-        SpawnWraith(2, new Vector2(12, -3), 1.9f, 2);
-        SpawnWraith(0, new Vector2(-12, 5), 1.65f, 2);
-        SpawnWraith(2, new Vector2(4, 9), 1.9f, 3);
+        StartWave(1);
+    }
+
+    void StartWave(int wave)
+    {
+        currentWave = Mathf.Clamp(wave, 1, WavesPerLevel);
+        waitingForNextWave = false;
+        if (levelClearBanner != null) levelClearBanner.SetActive(false);
+        levelClearBannerHideAt = -1f;
+
+        Vector2[] positions = {
+            new Vector2(-12, 7), new Vector2(-7, 9), new Vector2(-2, 8),
+            new Vector2(6, 9), new Vector2(12, 6), new Vector2(12, -6),
+            new Vector2(6, -9), new Vector2(-2, -8), new Vector2(-8, -8),
+            new Vector2(-13, -4), new Vector2(2, 3), new Vector2(10, 2)
+        };
+        int count = Mathf.Clamp(3 + currentWave * 2 + Mathf.Max(0, dungeonLevel - 1), 1, positions.Length);
+        enemiesRemaining = count;
+        for (int i = 0; i < count; i++)
+        {
+            int variant = (i + currentWave - 1) % 3;
+            float speed = 1.5f + variant * 0.15f + (dungeonLevel - 1) * 0.04f;
+            int hp = 2 + variant + currentWave - 1 + Mathf.Max(0, dungeonLevel - 1) / 2;
+            SpawnWraith(variant, positions[i], speed, hp);
+        }
+        ShowMessage("WAVE " + currentWave + " / " + WavesPerLevel + " - DEFEAT ALL WRAITHS!");
+        UpdateHud();
     }
 
     Sprite[] GetWraithFrames(int variant, int animation)
@@ -373,7 +398,7 @@ public class DungeonTaleGame : MonoBehaviour
         if (heading != null)
         {
             var headingText = heading.GetComponent<Text>();
-            if (headingText != null) headingText.text = "LEVEL UP!  CHOOSE ONE CARD";
+            if (headingText != null) headingText.text = showingLevelBonusChoice ? "LEVEL COMPLETE BONUS! CHOOSE ONE CARD" : "LEVEL UP!  CHOOSE ONE CARD";
         }
 
         List<int> availableChoices = new List<int>();
@@ -500,6 +525,17 @@ public class DungeonTaleGame : MonoBehaviour
     void ShowLevelUpChoice()
     {
         if (upgradeChoiceOpen || levelUpPanel == null) return;
+        showingLevelBonusChoice = false;
+        upgradeChoiceOpen = true;
+        PopulateLevelUpCards();
+        levelUpPanel.SetActive(true);
+        UpdateHud();
+    }
+
+    void ShowLevelBonusChoice()
+    {
+        if (!levelBonusPending || upgradeChoiceOpen || levelUpPanel == null) return;
+        showingLevelBonusChoice = true;
         upgradeChoiceOpen = true;
         PopulateLevelUpCards();
         levelUpPanel.SetActive(true);
@@ -545,15 +581,25 @@ public class DungeonTaleGame : MonoBehaviour
                 ShowMessage("XP BOOST! You now earn 25% more XP.");
                 break;
         }
+        bool selectedLevelBonus = showingLevelBonusChoice;
+        showingLevelBonusChoice = false;
         upgradeChoiceOpen = false;
         levelUpPanel.SetActive(false);
         UpdateHud();
+        if (selectedLevelBonus)
+        {
+            levelBonusPending = false;
+            EnterNextDungeon();
+            return;
+        }
         if (experience >= experienceToNextLevel)
         {
             experience -= experienceToNextLevel; playerLevel++;
             experienceToNextLevel = 100 + (playerLevel - 1) * 50;
             ShowLevelUpChoice();
+            return;
         }
+        if (levelBonusPending) ShowLevelBonusChoice();
     }
 
     void AddExperience(int amount)
@@ -887,7 +933,7 @@ public class DungeonTaleGame : MonoBehaviour
         {
             foreach (var oldObject in dungeonObjects) if (oldObject != null) Destroy(oldObject);
             dungeonObjects.Clear();
-            BuildNextDungeonLayout(); DecorateDungeon(); CreateLevelEnemies(); CreatePickups(); CreateTraps(); CreateExit();
+            BuildNextDungeonLayout(); DecorateDungeon(); CreateLevelEnemies(); CreatePickups(); CreateTraps();
         }
         if (player != null)
         {
@@ -1053,7 +1099,7 @@ public class DungeonTaleGame : MonoBehaviour
 
     public void UpdateHud()
     {
-        if (hud) hud.text = $"DUNGEON TALE     LEVEL: {dungeonLevel}     GOLD: {coins}     POTIONS: {potions}     MONSTERS: {enemiesRemaining}";
+        if (hud) hud.text = $"DUNGEON TALE     LEVEL: {dungeonLevel}     WAVE: {currentWave}/{WavesPerLevel}     GOLD: {coins}     POTIONS: {potions}     MONSTERS: {enemiesRemaining}";
         float healthRatio = maxHealth > 0 ? Mathf.Clamp01((float)playerHealth / maxHealth) : 0f;
         if (healthFillRect) healthFillRect.sizeDelta = new Vector2(292f * healthRatio, -8f);
         if (healthFill)
@@ -1113,15 +1159,32 @@ public class DungeonTaleGame : MonoBehaviour
         }
         if (enemiesRemaining == 0)
         {
-            ShowMessage("LEVEL " + dungeonLevel + " CLEAR! Enter the portal to continue.");
-            if (levelClearBanner != null)
+            if (currentWave < WavesPerLevel)
             {
-                levelClearTitle.text = "LEVEL " + dungeonLevel + " CLEAR!";
-                levelClearSubtitle.text = "All monsters defeated! Enter the portal to continue.";
-                levelClearBanner.SetActive(true);
-                levelClearBannerHideAt = Time.time + 2f;
+                ShowMessage("WAVE " + currentWave + " CLEAR!");
+                if (levelClearBanner != null)
+                {
+                    levelClearTitle.text = "WAVE " + currentWave + " CLEAR!";
+                    levelClearSubtitle.text = "Get ready for wave " + (currentWave + 1) + ".";
+                    levelClearBanner.SetActive(true);
+                    levelClearBannerHideAt = Time.time + 2f;
+                }
+                waitingForNextWave = true;
+                nextWaveStartAt = Time.time + 2.5f;
             }
-            SpawnNextDungeonPortal();
+            else
+            {
+                ShowMessage("LEVEL " + dungeonLevel + " CLEAR! Choose your bonus upgrade.");
+                if (levelClearBanner != null)
+                {
+                    levelClearTitle.text = "LEVEL " + dungeonLevel + " CLEAR!";
+                    levelClearSubtitle.text = "All 3 waves defeated! Choose one bonus power-up.";
+                    levelClearBanner.SetActive(true);
+                    levelClearBannerHideAt = -1f;
+                }
+                levelBonusPending = true;
+                ShowLevelBonusChoice();
+            }
         }
     }
 
@@ -1146,6 +1209,10 @@ public class DungeonTaleGame : MonoBehaviour
         if (finished || enemiesRemaining > 0) return;
 
         dungeonLevel++;
+        currentWave = 1;
+        waitingForNextWave = false;
+        levelBonusPending = false;
+        showingLevelBonusChoice = false;
         if (levelClearBanner != null) levelClearBanner.SetActive(false);
         if (levelUpPanel != null) levelUpPanel.SetActive(false);
         if (nextDungeonPortal != null) Destroy(nextDungeonPortal);
@@ -1165,7 +1232,6 @@ public class DungeonTaleGame : MonoBehaviour
         CreateLevelEnemies();
         CreatePickups();
         CreateTraps();
-        CreateExit();
 
         ShowMessage("DUNGEON " + dungeonLevel + " - " + GetDungeonName() + "!");
         UpdateHud();
@@ -1272,16 +1338,7 @@ public class DungeonTaleGame : MonoBehaviour
 
     void CreateLevelEnemies()
     {
-        Vector2[] positions = {
-            new Vector2(-12, 7), new Vector2(-7, 9), new Vector2(-2, 8),
-            new Vector2(6, 9), new Vector2(12, 6), new Vector2(12, -6),
-            new Vector2(6, -9), new Vector2(-2, -8), new Vector2(-8, -8),
-            new Vector2(-13, -4), new Vector2(2, 3), new Vector2(10, 2)
-        };
-        int count = Mathf.Min(positions.Length, 8 + (dungeonLevel - 1) * 2);
-        for (int i = 0; i < count; i++)
-            SpawnWraith(i % 3, positions[i], 1.55f + (i % 3) * 0.15f, 2 + (i % 2));
-        enemiesRemaining = count;
+        StartWave(1);
     }
 
     public void CollectCoin(){coins++;UpdateHud();}
@@ -1294,6 +1351,11 @@ public class DungeonTaleGame : MonoBehaviour
         {
             levelClearBanner.SetActive(false);
             levelClearBannerHideAt = -1f;
+        }
+
+        if (waitingForNextWave && gameStarted && !finished && !upgradeChoiceOpen && Time.time >= nextWaveStartAt)
+        {
+            StartWave(currentWave + 1);
         }
 
         if (gameStarted && !finished && !upgradeChoiceOpen)
