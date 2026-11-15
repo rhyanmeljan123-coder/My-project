@@ -431,7 +431,7 @@ public class DungeonTaleGame : MonoBehaviour
         // Coordinates are based on the supplied PNG atlas dimensions.
         if (uiMainMenuAtlas != null)
             uiPanelFrameSprite = CreateUiAtlasSprite(uiMainMenuAtlas,
-                new Rect(0, 0, Mathf.Min(80, uiMainMenuAtlas.width), uiMainMenuAtlas.height),
+                new Rect(Mathf.Min(96, uiMainMenuAtlas.width - 1), 0, Mathf.Min(80, uiMainMenuAtlas.width - 96), uiMainMenuAtlas.height),
                 new Vector4(7, 7, 7, 7));
 
         if (uiButtonsAtlas != null && uiButtonsAtlas.width >= 48 && uiButtonsAtlas.height >= 18)
@@ -468,7 +468,7 @@ public class DungeonTaleGame : MonoBehaviour
 
         if (uiActionPanelAtlas != null)
             uiActionFrameSprite = CreateUiAtlasSprite(uiActionPanelAtlas,
-                new Rect(0, 0, uiActionPanelAtlas.width, uiActionPanelAtlas.height),
+                new Rect(uiActionPanelAtlas.width * 0.06f, uiActionPanelAtlas.height * 0.16f, uiActionPanelAtlas.width * 0.88f, uiActionPanelAtlas.height * 0.40f),
                 new Vector4(6, 6, 6, 6));
     }
 
