@@ -256,12 +256,13 @@ public class DungeonTaleGame : MonoBehaviour
         levelUpPanel.transform.SetParent(parent, false);
         var pr = levelUpPanel.GetComponent<RectTransform>();
         pr.anchorMin = new Vector2(0.5f, 0.5f); pr.anchorMax = new Vector2(0.5f, 0.5f);
-        pr.pivot = new Vector2(0.5f, 0.5f); pr.anchoredPosition = Vector2.zero; pr.sizeDelta = new Vector2(1180, 460);
+        pr.pivot = new Vector2(0.5f, 0.5f); pr.anchoredPosition = Vector2.zero; pr.sizeDelta = new Vector2(1180, 520);
         var panelImage = levelUpPanel.GetComponent<Image>(); panelImage.sprite = uiWhiteSprite;
-        panelImage.color = new Color(0.025f, 0.07f, 0.12f, 0.99f); panelImage.raycastTarget = true;
-        var heading = MakeCenteredText(levelUpPanel.transform, "Level Up Heading", new Vector2(0, 175),
-            new Vector2(1080, 70), 38, FontStyle.Bold);
-        heading.text = "LEVEL UP!  CHOOSE ONE UPGRADE"; heading.color = new Color(0.45f, 0.9f, 1f, 1f); heading.raycastTarget = false;
+        panelImage.color = new Color(0.035f, 0.025f, 0.02f, 0.98f); panelImage.raycastTarget = true;
+
+        var heading = MakeCenteredText(levelUpPanel.transform, "Level Up Heading", new Vector2(0, 215),
+            new Vector2(1080, 62), 38, FontStyle.Bold);
+        heading.text = "LEVEL UP!  CHOOSE ONE CARD"; heading.color = new Color(0.72f, 0.94f, 0.58f, 1f); heading.raycastTarget = false;
 
         var cardsRoot = new GameObject("Upgrade Cards", typeof(RectTransform));
         cardsRoot.transform.SetParent(levelUpPanel.transform, false);
@@ -269,8 +270,8 @@ public class DungeonTaleGame : MonoBehaviour
         var cardsRect = cardsRoot.GetComponent<RectTransform>();
         cardsRect.anchorMin = cardsRect.anchorMax = new Vector2(0.5f, 0.5f);
         cardsRect.pivot = new Vector2(0.5f, 0.5f);
-        cardsRect.anchoredPosition = new Vector2(0, -20);
-        cardsRect.sizeDelta = new Vector2(1120, 270);
+        cardsRect.anchoredPosition = new Vector2(0, -18);
+        cardsRect.sizeDelta = new Vector2(1120, 390);
         levelUpPanel.SetActive(false);
     }
 
@@ -282,28 +283,28 @@ public class DungeonTaleGame : MonoBehaviour
 
         string[] titles = { "POWER", "SPEED", "CRITICAL STRIKE", "VITALITY", "ENERGY SHIELD", "DODGE", "XP BOOST" };
         string[] descriptions = {
-            "Deal more damage with every sword strike.",
-            "Move faster and avoid enemy attacks.",
-            "Land powerful critical hits for double damage.",
-            "Increase maximum health and recover HP.",
-            "Block an incoming hit with a protective shield.",
-            "Gain a chance to completely evade damage.",
-            "Earn more experience from every monster."
+            "Strengthen your weapon and deal more damage with every sword strike.",
+            "Move faster to chase enemies and escape dangerous attacks.",
+            "Sharpen your aim and increase the chance of dealing double damage.",
+            "Increase your maximum health and restore health immediately.",
+            "Gain a protective shield that blocks one incoming hit.",
+            "Improve your reflexes and gain a chance to evade enemy damage.",
+            "Gain bonus experience whenever you defeat a monster."
         };
-        string[] statLabels = { "DAMAGE  +1", "MOVE SPEED  +0.6", "CRITICAL  +10%", "MAX HP  +2", "SHIELD  +1", "DODGE  +10%", "XP GAIN  +25%" };
-        string[] symbols = { "ATK", "SPD", "CRIT", "HP", "SHD", "EVA", "XP" };
-        Color[] accents = {
-            new Color(1f, 0.38f, 0.25f), new Color(0.25f, 0.68f, 1f),
-            new Color(0.75f, 0.43f, 1f), new Color(0.28f, 0.88f, 0.52f),
-            new Color(0.22f, 0.82f, 0.9f), new Color(1f, 0.72f, 0.28f),
-            new Color(0.48f, 0.62f, 1f)
+        string[] statLabels = { " +1 SWORD DAMAGE", " +0.6 MOVE SPEED", " +10% CRITICAL CHANCE", " +2 MAX HEALTH", " +1 SHIELD CHARGE", " +10% DODGE CHANCE", " +25% XP GAIN" };
+        Sprite[] art = {
+            swordSprite, torchSprite, swordSprite, potionRed,
+            shieldSprite, shieldSprite, packCoinSprite ? packCoinSprite : coinSprite
         };
+        Color parchment = new Color(0.88f, 0.77f, 0.57f, 1f);
+        Color ink = new Color(0.16f, 0.12f, 0.075f, 1f);
+        Color green = new Color(0.12f, 0.36f, 0.13f, 1f);
 
         var heading = levelUpPanel.transform.Find("Level Up Heading");
         if (heading != null)
         {
             var headingText = heading.GetComponent<Text>();
-            if (headingText != null) headingText.text = "LEVEL UP!";
+            if (headingText != null) headingText.text = "LEVEL UP!  CHOOSE ONE CARD";
         }
 
         List<int> availableChoices = new List<int>();
@@ -311,114 +312,100 @@ public class DungeonTaleGame : MonoBehaviour
         for (int i = availableChoices.Count - 1; i > 0; i--)
         {
             int swapIndex = Random.Range(0, i + 1);
-            int temp = availableChoices[i];
-            availableChoices[i] = availableChoices[swapIndex];
-            availableChoices[swapIndex] = temp;
+            int temp = availableChoices[i]; availableChoices[i] = availableChoices[swapIndex]; availableChoices[swapIndex] = temp;
         }
 
         for (int i = 0; i < 3; i++)
         {
             int choice = availableChoices[i];
-            Color accent = accents[choice];
             var card = new GameObject(titles[choice] + " Card", typeof(RectTransform), typeof(Image), typeof(Button));
             card.transform.SetParent(levelUpCardsRoot, false);
             var cr = card.GetComponent<RectTransform>();
             cr.anchorMin = cr.anchorMax = new Vector2(0.5f, 0.5f);
             cr.pivot = new Vector2(0.5f, 0.5f);
-            cr.anchoredPosition = new Vector2((i - 1) * 370, 0);
-            cr.sizeDelta = new Vector2(340, 260);
+            cr.anchoredPosition = new Vector2((i - 1) * 365, 0);
+            cr.sizeDelta = new Vector2(330, 370);
 
             var cardImage = card.GetComponent<Image>();
             cardImage.sprite = uiWhiteSprite;
-            cardImage.color = new Color(0.055f, 0.09f, 0.15f, 1f);
+            cardImage.color = new Color(0.055f, 0.035f, 0.025f, 1f);
 
             var button = card.GetComponent<Button>();
-            var buttonColors = button.colors;
-            buttonColors.normalColor = Color.white;
-            buttonColors.highlightedColor = new Color(1f, 1f, 1f, 1f);
-            buttonColors.pressedColor = new Color(0.78f, 0.84f, 0.94f, 1f);
-            buttonColors.fadeDuration = 0.12f;
-            button.colors = buttonColors;
+            var colors = button.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor = new Color(1f, 0.94f, 0.76f, 1f);
+            colors.pressedColor = new Color(0.82f, 0.72f, 0.53f, 1f);
+            colors.fadeDuration = 0.12f;
+            button.colors = colors;
             button.onClick.AddListener(() => ChooseUpgrade(choice));
 
-            // Thin colored frame and left accent make each upgrade type easy to identify.
-            var frame = new GameObject("Accent Frame", typeof(RectTransform), typeof(Image));
-            frame.transform.SetParent(card.transform, false);
-            var fr = frame.GetComponent<RectTransform>();
-            fr.anchorMin = Vector2.zero; fr.anchorMax = Vector2.one;
-            fr.offsetMin = Vector2.zero; fr.offsetMax = Vector2.zero;
-            frame.GetComponent<Image>().sprite = uiWhiteSprite;
-            frame.GetComponent<Image>().color = new Color(accent.r, accent.g, accent.b, 0.24f);
-            frame.GetComponent<Image>().raycastTarget = false;
+            // Thick dark frame and warm parchment face, inspired by the supplied
+            // fantasy item-card reference.
+            var paper = new GameObject("Parchment Card Face", typeof(RectTransform), typeof(Image));
+            paper.transform.SetParent(card.transform, false);
+            var paperRect = paper.GetComponent<RectTransform>();
+            paperRect.anchorMin = Vector2.zero; paperRect.anchorMax = Vector2.one;
+            paperRect.offsetMin = new Vector2(7, 7); paperRect.offsetMax = new Vector2(-7, -7);
+            paper.GetComponent<Image>().sprite = uiWhiteSprite;
+            paper.GetComponent<Image>().color = parchment;
+            paper.GetComponent<Image>().raycastTarget = false;
 
-            var inner = new GameObject("Card Surface", typeof(RectTransform), typeof(Image));
-            inner.transform.SetParent(card.transform, false);
-            var ir = inner.GetComponent<RectTransform>();
-            ir.anchorMin = Vector2.zero; ir.anchorMax = Vector2.one;
-            ir.offsetMin = new Vector2(3, 3); ir.offsetMax = new Vector2(-3, -3);
-            inner.GetComponent<Image>().sprite = uiWhiteSprite;
-            inner.GetComponent<Image>().color = new Color(0.055f, 0.09f, 0.15f, 1f);
-            inner.GetComponent<Image>().raycastTarget = false;
+            var topShade = new GameObject("Illustration Backdrop", typeof(RectTransform), typeof(Image));
+            topShade.transform.SetParent(paper.transform, false);
+            var shadeRect = topShade.GetComponent<RectTransform>();
+            shadeRect.anchorMin = new Vector2(0, 0.43f); shadeRect.anchorMax = new Vector2(1, 1);
+            shadeRect.offsetMin = new Vector2(5, 0); shadeRect.offsetMax = new Vector2(-5, -5);
+            topShade.GetComponent<Image>().sprite = uiWhiteSprite;
+            topShade.GetComponent<Image>().color = new Color(0.18f, 0.12f, 0.09f, 1f);
+            topShade.GetComponent<Image>().raycastTarget = false;
 
-            var stripe = new GameObject("Accent Stripe", typeof(RectTransform), typeof(Image));
-            stripe.transform.SetParent(inner.transform, false);
-            var sr = stripe.GetComponent<RectTransform>();
-            sr.anchorMin = new Vector2(0, 0); sr.anchorMax = new Vector2(0, 1);
-            sr.pivot = new Vector2(0, 0.5f); sr.anchoredPosition = Vector2.zero;
-            sr.sizeDelta = new Vector2(7, 0);
-            stripe.GetComponent<Image>().sprite = uiWhiteSprite;
-            stripe.GetComponent<Image>().color = accent;
-            stripe.GetComponent<Image>().raycastTarget = false;
-
-            var icon = new GameObject("Upgrade Icon", typeof(RectTransform), typeof(Image));
-            icon.transform.SetParent(inner.transform, false);
-            var iconRect = icon.GetComponent<RectTransform>();
-            iconRect.anchorMin = iconRect.anchorMax = new Vector2(0.5f, 1f);
-            iconRect.pivot = new Vector2(0.5f, 1f);
-            iconRect.anchoredPosition = new Vector2(0, -18);
-            iconRect.sizeDelta = new Vector2(62, 62);
-            icon.GetComponent<Image>().sprite = uiWhiteSprite;
-            icon.GetComponent<Image>().color = new Color(accent.r, accent.g, accent.b, 0.2f);
-            icon.GetComponent<Image>().raycastTarget = false;
-
-            var symbol = MakeCenteredText(icon.transform, "Icon Symbol", Vector2.zero, new Vector2(58, 54), 17, FontStyle.Bold);
-            symbol.text = symbols[choice];
-            symbol.color = accent;
-            symbol.raycastTarget = false;
-
-            var title = MakeCenteredText(inner.transform, "Card Title", new Vector2(0, 25),
-                new Vector2(310, 36), 22, FontStyle.Bold);
+            var title = MakeCenteredText(paper.transform, "Card Title", new Vector2(0, -17),
+                new Vector2(300, 48), 25, FontStyle.Bold);
             title.text = titles[choice];
-            title.color = Color.white;
+            title.color = new Color(0.25f, 0.78f, 0.28f, 1f);
             title.raycastTarget = false;
 
-            var stat = MakeCenteredText(inner.transform, "Upgrade Stat", new Vector2(0, -10),
-                new Vector2(300, 28), 15, FontStyle.Bold);
+            var illustration = new GameObject("Upgrade Illustration", typeof(RectTransform), typeof(Image));
+            illustration.transform.SetParent(topShade.transform, false);
+            var artRect = illustration.GetComponent<RectTransform>();
+            artRect.anchorMin = artRect.anchorMax = new Vector2(0.5f, 0.5f);
+            artRect.pivot = new Vector2(0.5f, 0.5f);
+            artRect.anchoredPosition = new Vector2(0, -10);
+            artRect.sizeDelta = new Vector2(138, 138);
+            var artImage = illustration.GetComponent<Image>();
+            artImage.sprite = art[choice] ? art[choice] : uiWhiteSprite;
+            artImage.color = art[choice] ? Color.white : new Color(0.78f, 0.68f, 0.48f, 1f);
+            artImage.preserveAspect = true;
+            artImage.raycastTarget = false;
+
+            var stat = MakeCenteredText(paper.transform, "Card Stat", new Vector2(0, -123),
+                new Vector2(300, 35), 19, FontStyle.Bold);
             stat.text = statLabels[choice];
-            stat.color = accent;
+            stat.color = green;
             stat.raycastTarget = false;
 
-            var desc = MakeCenteredText(inner.transform, "Card Description", new Vector2(0, -54),
-                new Vector2(300, 48), 15, FontStyle.Normal);
+            var desc = MakeCenteredText(paper.transform, "Card Description", new Vector2(0, -170),
+                new Vector2(286, 72), 16, FontStyle.Normal);
             desc.text = descriptions[choice];
-            desc.color = new Color(0.78f, 0.84f, 0.92f, 1f);
+            desc.color = ink;
+            desc.alignment = TextAnchor.UpperLeft;
             desc.raycastTarget = false;
 
-            var footer = new GameObject("Choose Footer", typeof(RectTransform), typeof(Image));
-            footer.transform.SetParent(inner.transform, false);
+            var footer = new GameObject("Card Footer", typeof(RectTransform), typeof(Image));
+            footer.transform.SetParent(paper.transform, false);
             var footerRect = footer.GetComponent<RectTransform>();
             footerRect.anchorMin = new Vector2(0, 0); footerRect.anchorMax = new Vector2(1, 0);
             footerRect.pivot = new Vector2(0.5f, 0);
             footerRect.anchoredPosition = new Vector2(0, 0);
             footerRect.sizeDelta = new Vector2(0, 34);
             footer.GetComponent<Image>().sprite = uiWhiteSprite;
-            footer.GetComponent<Image>().color = new Color(accent.r, accent.g, accent.b, 0.16f);
+            footer.GetComponent<Image>().color = new Color(0.32f, 0.22f, 0.12f, 1f);
             footer.GetComponent<Image>().raycastTarget = false;
 
             var choose = MakeCenteredText(footer.transform, "Choose Label", Vector2.zero,
-                new Vector2(300, 30), 14, FontStyle.Bold);
-            choose.text = "SELECT UPGRADE";
-            choose.color = accent;
+                new Vector2(300, 30), 15, FontStyle.Bold);
+            choose.text = "CHOOSE THIS UPGRADE";
+            choose.color = new Color(0.96f, 0.86f, 0.63f, 1f);
             choose.raycastTarget = false;
         }
     }
