@@ -47,6 +47,14 @@ public class DungeonTaleGame : MonoBehaviour
     [Header("2D Pixel Dungeon Pack")]
     public Sprite packChestSprite, packTorchSprite, packSpikeSprite, packCoinSprite, packFlaskSprite;
     public Sprite potionRed, potionBlue, potionGreen, keySprite, swordSprite, shieldSprite, skullSprite, vaseSprite, chainSprite, boneSprite, carpetSprite;
+    [Header("Dungeon UI Pack Atlases")]
+    public Texture2D uiMainMenuAtlas, uiButtonsAtlas, uiMainTilesAtlas;
+    public Texture2D uiActionPanelAtlas, uiCharacterPanelAtlas, uiInventoryAtlas;
+    public Texture2D uiEquipmentAtlas, uiIconsAtlas, uiLevelsAtlas;
+    public Texture2D uiSettingsAtlas, uiShopAtlas, uiCraftAtlas, uiWinLoseAtlas;
+    public Texture2D uiCircleMenuAtlas, uiTextAtlas, uiNumbersAtlas, uiDecorativeAtlas;
+    private Sprite uiPanelFrameSprite, uiBlankButtonSprite, uiHealthFrameSprite, uiWinFrameSprite;
+    private Sprite uiInventoryFrameSprite, uiEquipmentFrameSprite, uiActionFrameSprite;
     [Header("Player stats")]
     public int playerHealth = 6, maxHealth = 6, coins, potions;
     public int enemiesRemaining = 8;
@@ -382,6 +390,7 @@ public class DungeonTaleGame : MonoBehaviour
         whiteTexture.SetPixel(0, 0, Color.white);
         whiteTexture.Apply();
         uiWhiteSprite = Sprite.Create(whiteTexture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f));
+        PrepareUiPackSprites();
 
         var canvasGo=new GameObject("Dungeon HUD");
         var canvas=canvasGo.AddComponent<Canvas>();
@@ -394,6 +403,7 @@ public class DungeonTaleGame : MonoBehaviour
         canvasGo.AddComponent<GraphicRaycaster>();
         hud=MakeText(canvas.transform,"HUD",new Vector2(18,-16),new Vector2(800,42),21,TextAnchor.UpperLeft);
         CreateHealthBar(canvas.transform);
+        CreateActionBar(canvas.transform);
         message=MakeText(canvas.transform,"Message",new Vector2(0,18),new Vector2(850,54),20,TextAnchor.LowerCenter);
         message.rectTransform.anchorMin=new Vector2(.5f,0);message.rectTransform.anchorMax=new Vector2(.5f,0);
         message.text="WASD / Arrows: Move     SPACE: Attack     E: Use potion";
@@ -403,6 +413,90 @@ public class DungeonTaleGame : MonoBehaviour
         CreateLevelUpPanel(canvas.transform);
     }
     
+
+    Sprite CreateUiAtlasSprite(Texture2D atlas, Rect rect, Vector4 border)
+    {
+        if (atlas == null) return null;
+        rect.x = Mathf.Clamp(rect.x, 0, atlas.width - 1);
+        rect.y = Mathf.Clamp(rect.y, 0, atlas.height - 1);
+        rect.width = Mathf.Clamp(rect.width, 1, atlas.width - rect.x);
+        rect.height = Mathf.Clamp(rect.height, 1, atlas.height - rect.y);
+        return Sprite.Create(atlas, rect, new Vector2(0.5f, 0.5f), 100f, 0,
+            SpriteMeshType.FullRect, border);
+    }
+
+    void PrepareUiPackSprites()
+    {
+        // Crop the original atlas artwork into reusable Unity UI sprites.
+        // Coordinates are based on the supplied PNG atlas dimensions.
+        if (uiMainMenuAtlas != null)
+            uiPanelFrameSprite = CreateUiAtlasSprite(uiMainMenuAtlas,
+                new Rect(0, 0, Mathf.Min(80, uiMainMenuAtlas.width), uiMainMenuAtlas.height),
+                new Vector4(7, 7, 7, 7));
+
+        if (uiButtonsAtlas != null && uiButtonsAtlas.width >= 48 && uiButtonsAtlas.height >= 18)
+            uiBlankButtonSprite = CreateUiAtlasSprite(uiButtonsAtlas,
+                new Rect(3, 0, Mathf.Min(44, uiButtonsAtlas.width - 3), Mathf.Min(18, uiButtonsAtlas.height)),
+                new Vector4(6, 5, 6, 5));
+
+        if (uiCharacterPanelAtlas != null)
+            uiHealthFrameSprite = CreateUiAtlasSprite(uiCharacterPanelAtlas,
+                new Rect(0, uiCharacterPanelAtlas.height * 0.72f,
+                    Mathf.Min(uiCharacterPanelAtlas.width * 0.48f, 96),
+                    Mathf.Min(uiCharacterPanelAtlas.height * 0.28f, 36)),
+                new Vector4(8, 8, 8, 8));
+
+        if (uiWinLoseAtlas != null)
+            uiWinFrameSprite = CreateUiAtlasSprite(uiWinLoseAtlas,
+                new Rect(0, uiWinLoseAtlas.height * 0.72f,
+                    Mathf.Min(uiWinLoseAtlas.width * 0.28f, 108),
+                    Mathf.Min(uiWinLoseAtlas.height * 0.28f, 108)),
+                new Vector4(8, 8, 8, 8));
+
+        if (uiInventoryAtlas != null)
+            uiInventoryFrameSprite = CreateUiAtlasSprite(uiInventoryAtlas,
+                new Rect(0, uiInventoryAtlas.height * 0.50f,
+                    Mathf.Min(uiInventoryAtlas.width * 0.29f, 112),
+                    Mathf.Min(uiInventoryAtlas.height * 0.50f, 100)),
+                new Vector4(8, 8, 8, 8));
+
+        if (uiEquipmentAtlas != null)
+            uiEquipmentFrameSprite = CreateUiAtlasSprite(uiEquipmentAtlas,
+                new Rect(uiEquipmentAtlas.width * 0.36f, uiEquipmentAtlas.height * 0.62f,
+                    uiEquipmentAtlas.width * 0.62f, uiEquipmentAtlas.height * 0.36f),
+                new Vector4(8, 8, 8, 8));
+
+        if (uiActionPanelAtlas != null)
+            uiActionFrameSprite = CreateUiAtlasSprite(uiActionPanelAtlas,
+                new Rect(0, 0, uiActionPanelAtlas.width, uiActionPanelAtlas.height),
+                new Vector4(6, 6, 6, 6));
+    }
+
+    void CreateActionBar(Transform parent)
+    {
+        if (uiActionFrameSprite == null) return;
+        var bar = new GameObject("Fantasy Action Bar", typeof(RectTransform), typeof(Image));
+        bar.transform.SetParent(parent, false);
+        var rect = bar.GetComponent<RectTransform>();
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0);
+        rect.pivot = new Vector2(0.5f, 0);
+        rect.anchoredPosition = new Vector2(0, 12);
+        rect.sizeDelta = new Vector2(440, 82);
+        var image = bar.GetComponent<Image>();
+        image.sprite = uiActionFrameSprite;
+        image.type = Image.Type.Sliced;
+        image.color = Color.white;
+        image.raycastTarget = false;
+        var slots = new[] { "1  ATTACK", "2  POTION", "I  ITEMS" };
+        for (int i = 0; i < slots.Length; i++)
+        {
+            var label = MakeCenteredText(bar.transform, "Action Slot " + (i + 1),
+                new Vector2(-125 + i * 125, 0), new Vector2(112, 24), 13, FontStyle.Bold);
+            label.text = slots[i];
+            label.color = new Color(0.88f, 0.78f, 0.55f, 1f);
+            label.raycastTarget = false;
+        }
+    }
 
     void CreateExperienceBar(Transform parent)
     {
@@ -432,8 +526,10 @@ public class DungeonTaleGame : MonoBehaviour
         var pr = levelUpPanel.GetComponent<RectTransform>();
         pr.anchorMin = new Vector2(0.5f, 0.5f); pr.anchorMax = new Vector2(0.5f, 0.5f);
         pr.pivot = new Vector2(0.5f, 0.5f); pr.anchoredPosition = Vector2.zero; pr.sizeDelta = new Vector2(1180, 520);
-        var panelImage = levelUpPanel.GetComponent<Image>(); panelImage.sprite = uiWhiteSprite;
-        panelImage.color = new Color(0.035f, 0.025f, 0.02f, 0.98f); panelImage.raycastTarget = true;
+        var panelImage = levelUpPanel.GetComponent<Image>();
+        panelImage.sprite = uiPanelFrameSprite != null ? uiPanelFrameSprite : uiWhiteSprite;
+        panelImage.type = uiPanelFrameSprite != null ? Image.Type.Sliced : Image.Type.Simple;
+        panelImage.color = Color.white; panelImage.raycastTarget = true;
 
         var heading = MakeCenteredText(levelUpPanel.transform, "Level Up Heading", new Vector2(0, 215),
             new Vector2(1080, 62), 38, FontStyle.Bold);
@@ -714,7 +810,9 @@ public class DungeonTaleGame : MonoBehaviour
         bannerRect.anchoredPosition = Vector2.zero;
         bannerRect.sizeDelta = new Vector2(620, 190);
         var bannerImage = levelClearBanner.GetComponent<Image>();
-        bannerImage.color = new Color(0.025f, 0.12f, 0.16f, 0.96f);
+        bannerImage.sprite = uiPanelFrameSprite != null ? uiPanelFrameSprite : uiWhiteSprite;
+        bannerImage.type = uiPanelFrameSprite != null ? Image.Type.Sliced : Image.Type.Simple;
+        bannerImage.color = Color.white;
         bannerImage.raycastTarget = false;
 
         levelClearTitle = MakeCenteredText(levelClearBanner.transform, "Level Clear Title",
@@ -736,7 +834,10 @@ public class DungeonTaleGame : MonoBehaviour
         rect.pivot = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = Vector2.zero;
         rect.sizeDelta = size;
-        panel.GetComponent<Image>().color = new Color(0.055f, 0.085f, 0.13f, 0.98f);
+        var panelImage = panel.GetComponent<Image>();
+        panelImage.sprite = uiPanelFrameSprite != null ? uiPanelFrameSprite : uiWhiteSprite;
+        panelImage.type = uiPanelFrameSprite != null ? Image.Type.Sliced : Image.Type.Simple;
+        panelImage.color = Color.white;
         return panel;
     }
 
@@ -844,6 +945,12 @@ public class DungeonTaleGame : MonoBehaviour
         settingsPanel.SetActive(false);
 
         endPanel = CreateOverlayPanel(screenOverlay.transform, "End Screen Panel", new Vector2(620, 440));
+        if (uiWinFrameSprite != null)
+        {
+            var endPanelImage = endPanel.GetComponent<Image>();
+            endPanelImage.sprite = uiWinFrameSprite;
+            endPanelImage.type = Image.Type.Sliced;
+        }
         endTitle = MakeCenteredText(endPanel.transform, "End Screen Title", new Vector2(0, 125), new Vector2(560, 80), 42, FontStyle.Bold);
         endSubtitle = MakeCenteredText(endPanel.transform, "End Screen Description", new Vector2(0, 35), new Vector2(540, 90), 18, FontStyle.Normal);
         primaryOverlayButton = MakeOverlayButton(endPanel.transform, "Primary Action", new Vector2(0, -85), "PLAY AGAIN");
@@ -1129,15 +1236,19 @@ public class DungeonTaleGame : MonoBehaviour
         rect.anchoredPosition = position;
         rect.sizeDelta = new Vector2(260, 58);
         var image = go.GetComponent<Image>();
-        image.color = new Color(0.12f, 0.48f, 0.72f, 1f);
+        image.sprite = uiBlankButtonSprite != null ? uiBlankButtonSprite : uiWhiteSprite;
+        image.type = uiBlankButtonSprite != null ? Image.Type.Sliced : Image.Type.Simple;
+        image.color = Color.white;
         var button = go.GetComponent<Button>();
         var colors = button.colors;
-        colors.normalColor = new Color(0.12f, 0.48f, 0.72f, 1f);
-        colors.highlightedColor = new Color(0.2f, 0.62f, 0.88f, 1f);
-        colors.pressedColor = new Color(0.07f, 0.32f, 0.52f, 1f);
+        colors.normalColor = Color.white;
+        colors.highlightedColor = new Color(0.82f, 1f, 0.86f, 1f);
+        colors.pressedColor = new Color(0.72f, 0.86f, 0.75f, 1f);
         button.colors = colors;
         var label = MakeCenteredText(go.transform, "Button Label", Vector2.zero, new Vector2(250, 54), 21, FontStyle.Bold);
         label.text = caption;
+        label.color = new Color(0.12f, 0.16f, 0.10f, 1f);
+        label.fontSize = 18;
         return button;
     }
 
@@ -1156,8 +1267,9 @@ public class DungeonTaleGame : MonoBehaviour
         bgRect.anchoredPosition = new Vector2(24, -64);
         bgRect.sizeDelta = new Vector2(300, 32);
         var bgImage = background.GetComponent<Image>();
-        bgImage.sprite = uiWhiteSprite;
-        bgImage.color = new Color(0.035f, 0.04f, 0.055f, 0.98f);
+        bgImage.sprite = uiHealthFrameSprite != null ? uiHealthFrameSprite : uiWhiteSprite;
+        bgImage.type = uiHealthFrameSprite != null ? Image.Type.Sliced : Image.Type.Simple;
+        bgImage.color = Color.white;
         bgImage.raycastTarget = false;
 
         var fill = new GameObject("Health Bar Fill", typeof(RectTransform), typeof(Image));
