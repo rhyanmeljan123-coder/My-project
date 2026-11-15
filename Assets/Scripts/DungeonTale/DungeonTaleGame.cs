@@ -103,6 +103,7 @@ public class DungeonTaleGame : MonoBehaviour
     private bool healthRegenEnabled;
 
     void Start() {
+        DungeonTaleAudio.Initialize();
         AudioListener.volume = PlayerPrefs.GetFloat(SavePrefix + "Volume", 1f);
         int savedQuality = PlayerPrefs.GetInt(SavePrefix + "Quality", QualitySettings.GetQualityLevel());
         if (savedQuality >= 0 && savedQuality < QualitySettings.names.Length) QualitySettings.SetQualityLevel(savedQuality, true);
@@ -169,6 +170,7 @@ public class DungeonTaleGame : MonoBehaviour
             else
                 SpawnWraith(variant, positions[i], speed, hp);
         }
+        DungeonTaleAudio.PlaySfx("wave_start");
         ShowMessage("WAVE " + currentWave + " / " + WavesPerLevel + " - DEFEAT ALL WRAITHS!");
         UpdateHud();
     }
@@ -626,6 +628,7 @@ public class DungeonTaleGame : MonoBehaviour
     void ChooseUpgrade(int choice)
     {
         if (!upgradeChoiceOpen) return;
+        DungeonTaleAudio.PlaySfx("upgrade");
         switch (choice)
         {
             case 0:
@@ -1210,16 +1213,18 @@ public class DungeonTaleGame : MonoBehaviour
             UpdateHud();
             return;
         }
+        DungeonTaleAudio.PlaySfx("player_hit");
         playerHealth--;
         if (healthRegenEnabled && nextHealthRegen <= 0f) nextHealthRegen = Time.time + healthRegenInterval;
         UpdateHud();
-        if (playerHealth <= 0) { finished = true; ShowEndScreen(false); }
+        if (playerHealth <= 0) { finished = true; DungeonTaleAudio.PlaySfx("game_over"); ShowEndScreen(false); }
     }
     public void EnemyDefeated(int xpReward, Vector2 dropPosition, float coinChance, float potionChance)
     {
         enemiesRemaining = Mathf.Max(0, enemiesRemaining - 1);
         UpdateHud();
         AddExperience(xpReward);
+        DungeonTaleAudio.PlaySfx("enemy_down");
         // Roll one drop per defeated monster. Potions are rarer than coins.
         float dropRoll = Random.value;
         if (dropRoll < potionChance && (packFlaskSprite || potionRed))
@@ -1290,6 +1295,7 @@ public class DungeonTaleGame : MonoBehaviour
         if (finished || enemiesRemaining > 0) return;
 
         dungeonLevel++;
+        DungeonTaleAudio.PlaySfx("level_up");
         currentWave = 1;
         waitingForNextWave = false;
         levelBonusPending = false;
@@ -1422,9 +1428,9 @@ public class DungeonTaleGame : MonoBehaviour
         StartWave(1);
     }
 
-    public void CollectCoin(){coins++;UpdateHud();}
-    public void CollectItem(string item){if(item=="Dungeon Key"){hasKey=true;ShowMessage("Dungeon key collected! The exit is unlocked.");}else if(item.Contains("Potion")){potions++;ShowMessage("Potion collected. Press E to restore health.");}UpdateHud();}
-    public void UsePotion(){if(potions<=0||playerHealth>=maxHealth)return;potions--;playerHealth=Mathf.Min(maxHealth,playerHealth+3);UpdateHud();ShowMessage("Potion used. Health restored.");}
+    public void CollectCoin(){coins++;DungeonTaleAudio.PlaySfx("coin");UpdateHud();}
+    public void CollectItem(string item){if(item=="Dungeon Key"){hasKey=true;DungeonTaleAudio.PlaySfx("upgrade");ShowMessage("Dungeon key collected! The exit is unlocked.");}else if(item.Contains("Potion")){potions++;DungeonTaleAudio.PlaySfx("pickup");ShowMessage("Potion collected. Press E to restore health.");}UpdateHud();}
+    public void UsePotion(){if(potions<=0||playerHealth>=maxHealth)return;potions--;playerHealth=Mathf.Min(maxHealth,playerHealth+3);DungeonTaleAudio.PlaySfx("heal");UpdateHud();ShowMessage("Potion used. Health restored.");}
     public void HitTrap(){DamagePlayer();}
     public void ReachExit(){if(enemiesRemaining>0){ShowMessage("Defeat every monster first!");return;}if(!hasKey){ShowMessage("The exit is locked. Find the dungeon key!");return;}finished=true;ShowEndScreen(true);}
     void Update()
@@ -1464,4 +1470,113 @@ public class DungeonTaleGame : MonoBehaviour
 
 
 
+}
+
+// Runtime-generated audio keeps the game self-contained; no external audio files are required.
+public class DungeonTaleAudio : MonoBehaviour
+{
+    private static DungeonTaleAudio instance;
+    private AudioSource musicSource;
+    private AudioSource sfxSource;
+    private readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>();
+    private const int SampleRate = 22050;
+
+    public static void Initialize()
+    {
+        if (instance != null) return;
+        var go = new GameObject("Dungeon Tale Audio");
+        DontDestroyOnLoad(go);
+        instance = go.AddComponent<DungeonTaleAudio>();
+    }
+
+    void Awake()
+    {
+        if (instance != null && instance != this) { Destroy(gameObject); return; }
+        instance = this;
+        musicSource = gameObject.AddComponent<AudioSource>();
+        sfxSource = gameObject.AddComponent<AudioSource>();
+        musicSource.loop = true;
+        musicSource.playOnAwake = false;
+        musicSource.volume = 0.22f;
+        sfxSource.playOnAwake = false;
+        sfxSource.volume = 0.75f;
+        musicSource.clip = BuildMusic();
+        musicSource.Play();
+        BuildEffects();
+    }
+
+    public static void PlaySfx(string cue)
+    {
+        if (instance == null) Initialize();
+        if (instance != null && instance.clips.TryGetValue(cue, out AudioClip clip))
+            instance.sfxSource.PlayOneShot(clip);
+    }
+
+    AudioClip BuildMusic()
+    {
+        const int seconds = 24;
+        int count = SampleRate * seconds;
+        float[] samples = new float[count];
+        // A quiet, looping dungeon melody with a soft bass pulse.
+        float[] notes = { 146.83f, 174.61f, 196.00f, 220.00f, 196.00f, 174.61f, 164.81f, 146.83f };
+        for (int i = 0; i < count; i++)
+        {
+            float t = (float)i / SampleRate;
+            int beat = Mathf.FloorToInt(t / 0.75f);
+            float local = (t % 0.75f) / 0.75f;
+            float env = Mathf.Sin(Mathf.PI * Mathf.Clamp01(local));
+            float note = notes[beat % notes.Length];
+            float melody = Mathf.Sin(2f * Mathf.PI * note * t) * 0.12f
+                         + Mathf.Sin(2f * Mathf.PI * note * 2f * t) * 0.025f;
+            float bass = Mathf.Sin(2f * Mathf.PI * (note * 0.5f) * t) * 0.07f;
+            samples[i] = (melody * env + bass * 0.55f) * 0.7f;
+        }
+        return MakeClip("Dungeon Ambience", samples);
+    }
+
+    void BuildEffects()
+    {
+        clips["sword"] = Tone("Sword Swing", 520f, 180f, 0.16f, 0.32f, true);
+        clips["enemy_hit"] = Tone("Enemy Hit", 190f, 75f, 0.12f, 0.38f, true);
+        clips["enemy_down"] = Tone("Enemy Defeated", 330f, 110f, 0.32f, 0.35f, false);
+        clips["player_hit"] = Tone("Player Hurt", 145f, 65f, 0.24f, 0.48f, true);
+        clips["coin"] = Tone("Coin Pickup", 880f, 1320f, 0.12f, 0.24f, false);
+        clips["pickup"] = Tone("Item Pickup", 620f, 940f, 0.18f, 0.24f, false);
+        clips["heal"] = Tone("Potion Heal", 440f, 880f, 0.38f, 0.22f, false);
+        clips["upgrade"] = Tone("Upgrade", 520f, 1040f, 0.42f, 0.24f, false);
+        clips["wave_start"] = Tone("Wave Start", 220f, 440f, 0.42f, 0.26f, false);
+        clips["level_up"] = Tone("Level Up", 440f, 880f, 0.65f, 0.22f, false);
+        clips["game_over"] = Tone("Game Over", 300f, 70f, 0.9f, 0.3f, false);
+    }
+
+    AudioClip Tone(string clipName, float startHz, float endHz, float duration, float volume, bool noise)
+    {
+        int count = Mathf.CeilToInt(SampleRate * duration);
+        float[] data = new float[count];
+        uint seed = 2166136261;
+        for (int i = 0; i < clipName.Length; i++) seed = (seed ^ clipName[i]) * 16777619;
+        for (int i = 0; i < count; i++)
+        {
+            float t = (float)i / SampleRate;
+            float progress = (float)i / Mathf.Max(1, count - 1);
+            float frequency = Mathf.Lerp(startHz, endHz, progress);
+            float envelope = Mathf.Pow(1f - progress, 2f);
+            float wave = Mathf.Sin(2f * Mathf.PI * frequency * t);
+            if (noise)
+            {
+                seed = 1664525 * seed + 1013904223;
+                float grit = ((seed >> 8) / 8388607.5f) - 1f;
+                wave = wave * 0.72f + grit * 0.28f;
+            }
+            data[i] = wave * envelope * volume;
+        }
+        return MakeClip(clipName, data);
+    }
+
+    AudioClip MakeClip(string clipName, float[] samples)
+    {
+        AudioClip clip = AudioClip.Create(clipName, samples.Length, 1, SampleRate, false);
+        clip.SetData(samples, 0);
+        return clip;
+    }
 }
