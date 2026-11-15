@@ -33,10 +33,32 @@ public class DungeonEnemy : MonoBehaviour
     private bool playingHurt;
     private bool playingDeath;
 
-    public void SetWraithAnimations(Sprite[] idle, Sprite[] walk, Sprite[] attack, Sprite[] hurt, Sprite[] death)
+    public void SetWraithAnimations(SpriteRenderer visual, Sprite[] idle, Sprite[] walk, Sprite[] attack, Sprite[] hurt, Sprite[] death)
     {
+        // Assign the exact renderer created by SpawnWraith; do not rely on
+        // GetComponentInChildren timing during AddComponent/Awake.
+        if (visual != null)
+        {
+            spriteRenderer = visual;
+            visualTransform = visual.transform;
+            visualBaseLocalPosition = visualTransform.localPosition;
+            visualBaseLocalScale = visualTransform.localScale;
+            visualBaseColor = visual.color;
+            visual.enabled = true;
+            visual.gameObject.SetActive(true);
+        }
         idleFrames = idle; walkFrames = walk; attackFrames = attack; hurtFrames = hurt; deathFrames = death;
-        ApplyFrame(idleFrames, 0);
+        if (idleFrames != null && idleFrames.Length > 0)
+        {
+            spriteRenderer.sprite = idleFrames[0];
+            spriteRenderer.color = Color.white;
+            spriteRenderer.enabled = true;
+            Debug.Log("Dungeon Tale: Wraith visual assigned: " + idleFrames[0].name);
+        }
+        else
+        {
+            Debug.LogError("Dungeon Tale: Wraith has no idle sprite frames. Check CraftPix sprite import.");
+        }
     }
 
     void ApplyFrame(Sprite[] frames, int index)
