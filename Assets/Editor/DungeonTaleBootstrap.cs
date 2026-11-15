@@ -104,6 +104,7 @@ public static class DungeonTaleBootstrap
         game.orcIdleSprite = FindCharacterSprite("Orc", "Idle");
         game.orcWalkFrames = FindCharacterFrames("Orc", "Walk");
         game.orcAttackFrames = FindCharacterFrames("Orc", "Attack01");
+        AssignWraithAssets(game);
         game.slimeSprite = FindSprite("Char_Slime");
         game.skeletonSprite = FindSprite("Char_Skeletone");
         game.batSprite = FindSprite("Char_Bat");
@@ -265,12 +266,55 @@ public static class DungeonTaleBootstrap
         game.orcIdleSprite = FindCharacterSprite("Orc", "Idle");
         game.orcWalkFrames = FindCharacterFrames("Orc", "Walk");
         game.orcAttackFrames = FindCharacterFrames("Orc", "Attack01");
+        AssignWraithAssets(game);
         EditorUtility.SetDirty(game);
         EditorSceneManager.MarkSceneDirty(game.gameObject.scene);
         EditorSceneManager.SaveScene(game.gameObject.scene);
         EditorUtility.DisplayDialog("Dungeon Tale",
             "Character assets assigned. Soldier frames: " + game.soldierWalkFrames.Length +
             ", Orc frames: " + game.orcWalkFrames.Length + ".", "OK");
+    }
+
+    static Sprite[] FindWraithFrames(int variant, string animation, int frameCount)
+    {
+        string id = "Wraith_0" + variant;
+        string folder = "Assets/craftpix-net-563568-free-wraith-tiny-style-2d-sprites/PNG/" + id + "/PNG Sequences/" + animation + "/";
+        var result = new System.Collections.Generic.List<Sprite>();
+        for (int i = 0; i < frameCount; i++)
+        {
+            string fileName;
+            if (animation == "Walking") fileName = id + "_Moving Forward_" + i.ToString("000") + ".png";
+            else if (animation == "Attacking") fileName = id + "_Attack_" + i.ToString("000") + ".png";
+            else if (animation == "Dying") fileName = id + "_Dying_" + i.ToString("000") + ".png";
+            else if (animation == "Hurt") fileName = id + "_Hurt_" + i.ToString("000") + ".png";
+            else fileName = id + "_Idle_" + i.ToString("000") + ".png";
+
+            string path = folder + fileName;
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null) continue;
+            if (importer.textureType != TextureImporterType.Sprite || importer.spriteImportMode != SpriteImportMode.Single)
+            {
+                importer.textureType = TextureImporterType.Sprite;
+                importer.spriteImportMode = SpriteImportMode.Single;
+                importer.SaveAndReimport();
+            }
+            Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sprite != null) result.Add(sprite);
+        }
+        return result.ToArray();
+    }
+
+    static void AssignWraithAssets(DungeonTaleGame game)
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            int variant = i + 1;
+            game.wraithIdleFrames[i] = FindWraithFrames(variant, "Idle", 12);
+            game.wraithWalkFrames[i] = FindWraithFrames(variant, "Walking", 12);
+            game.wraithAttackFrames[i] = FindWraithFrames(variant, "Attacking", 12);
+            game.wraithHurtFrames[i] = FindWraithFrames(variant, "Hurt", 12);
+            game.wraithDeathFrames[i] = FindWraithFrames(variant, "Dying", 15);
+        }
     }
 
     static Sprite FindSprite(string n) {
