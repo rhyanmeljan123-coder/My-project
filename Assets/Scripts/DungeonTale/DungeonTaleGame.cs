@@ -353,16 +353,21 @@ public class DungeonTaleGame : MonoBehaviour
             var topShade = new GameObject("Illustration Backdrop", typeof(RectTransform), typeof(Image));
             topShade.transform.SetParent(paper.transform, false);
             var shadeRect = topShade.GetComponent<RectTransform>();
-            shadeRect.anchorMin = new Vector2(0, 0.43f); shadeRect.anchorMax = new Vector2(1, 1);
+            shadeRect.anchorMin = new Vector2(0, 0.49f); shadeRect.anchorMax = new Vector2(1, 1);
             shadeRect.offsetMin = new Vector2(5, 0); shadeRect.offsetMax = new Vector2(-5, -5);
             topShade.GetComponent<Image>().sprite = uiWhiteSprite;
             topShade.GetComponent<Image>().color = new Color(0.18f, 0.12f, 0.09f, 1f);
             topShade.GetComponent<Image>().raycastTarget = false;
 
-            var title = MakeCenteredText(paper.transform, "Card Title", new Vector2(0, -17),
-                new Vector2(300, 48), 25, FontStyle.Bold);
+            var title = MakeCenteredText(paper.transform, "Card Title", new Vector2(0, -15),
+                new Vector2(304, 58), 22, FontStyle.Bold);
             title.text = titles[choice];
             title.color = new Color(0.25f, 0.78f, 0.28f, 1f);
+            title.resizeTextForBestFit = true;
+            title.resizeTextMinSize = 16;
+            title.resizeTextMaxSize = 22;
+            title.horizontalOverflow = HorizontalWrapMode.Wrap;
+            title.verticalOverflow = VerticalWrapMode.Truncate;
             title.raycastTarget = false;
 
             var illustration = new GameObject("Upgrade Illustration", typeof(RectTransform), typeof(Image));
@@ -371,24 +376,34 @@ public class DungeonTaleGame : MonoBehaviour
             artRect.anchorMin = artRect.anchorMax = new Vector2(0.5f, 0.5f);
             artRect.pivot = new Vector2(0.5f, 0.5f);
             artRect.anchoredPosition = new Vector2(0, -10);
-            artRect.sizeDelta = new Vector2(138, 138);
+            artRect.sizeDelta = new Vector2(118, 118);
             var artImage = illustration.GetComponent<Image>();
             artImage.sprite = art[choice] ? art[choice] : uiWhiteSprite;
             artImage.color = art[choice] ? Color.white : new Color(0.78f, 0.68f, 0.48f, 1f);
             artImage.preserveAspect = true;
             artImage.raycastTarget = false;
 
-            var stat = MakeCenteredText(paper.transform, "Card Stat", new Vector2(0, -123),
-                new Vector2(300, 35), 19, FontStyle.Bold);
+            var stat = MakeCenteredText(paper.transform, "Card Stat", new Vector2(0, -119),
+                new Vector2(300, 44), 16, FontStyle.Bold);
             stat.text = statLabels[choice];
             stat.color = green;
+            stat.resizeTextForBestFit = true;
+            stat.resizeTextMinSize = 13;
+            stat.resizeTextMaxSize = 16;
+            stat.horizontalOverflow = HorizontalWrapMode.Wrap;
+            stat.verticalOverflow = VerticalWrapMode.Truncate;
             stat.raycastTarget = false;
 
-            var desc = MakeCenteredText(paper.transform, "Card Description", new Vector2(0, -170),
-                new Vector2(286, 72), 16, FontStyle.Normal);
+            var desc = MakeCenteredText(paper.transform, "Card Description", new Vector2(0, -174),
+                new Vector2(286, 94), 14, FontStyle.Normal);
             desc.text = descriptions[choice];
             desc.color = ink;
             desc.alignment = TextAnchor.UpperLeft;
+            desc.resizeTextForBestFit = true;
+            desc.resizeTextMinSize = 12;
+            desc.resizeTextMaxSize = 14;
+            desc.horizontalOverflow = HorizontalWrapMode.Wrap;
+            desc.verticalOverflow = VerticalWrapMode.Truncate;
             desc.raycastTarget = false;
 
             var footer = new GameObject("Card Footer", typeof(RectTransform), typeof(Image));
@@ -404,8 +419,11 @@ public class DungeonTaleGame : MonoBehaviour
 
             var choose = MakeCenteredText(footer.transform, "Choose Label", Vector2.zero,
                 new Vector2(300, 30), 15, FontStyle.Bold);
-            choose.text = "CHOOSE THIS UPGRADE";
+            choose.text = "SELECT CARD";
             choose.color = new Color(0.96f, 0.86f, 0.63f, 1f);
+            choose.resizeTextForBestFit = true;
+            choose.resizeTextMinSize = 12;
+            choose.resizeTextMaxSize = 15;
             choose.raycastTarget = false;
         }
     }
