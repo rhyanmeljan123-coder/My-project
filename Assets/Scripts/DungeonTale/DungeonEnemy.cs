@@ -27,6 +27,37 @@ public class DungeonEnemy : MonoBehaviour
     private float nextPathRefresh;
     private Vector3Int lastTargetCell = new Vector3Int(int.MinValue, int.MinValue, 0);
     private const float RepathInterval = 0.35f;
+    private Sprite[] idleFrames, walkFrames, attackFrames, hurtFrames, deathFrames;
+    private float frameTimer;
+    private int frameIndex;
+    private bool playingHurt;
+    private bool playingDeath;
+
+    public void SetWraithAnimations(Sprite[] idle, Sprite[] walk, Sprite[] attack, Sprite[] hurt, Sprite[] death)
+    {
+        idleFrames = idle; walkFrames = walk; attackFrames = attack; hurtFrames = hurt; deathFrames = death;
+        ApplyFrame(idleFrames, 0);
+    }
+
+    void ApplyFrame(Sprite[] frames, int index)
+    {
+        if (spriteRenderer == null || frames == null || frames.Length == 0) return;
+        spriteRenderer.sprite = frames[Mathf.Clamp(index, 0, frames.Length - 1)];
+    }
+
+    void AnimateFrames(Sprite[] frames, float fps, bool loop)
+    {
+        if (frames == null || frames.Length == 0) return;
+        frameTimer += Time.deltaTime;
+        float frameLength = 1f / Mathf.Max(1f, fps);
+        while (frameTimer >= frameLength)
+        {
+            frameTimer -= frameLength;
+            if (frameIndex < frames.Length - 1) frameIndex++;
+            else if (loop) frameIndex = 0;
+        }
+        ApplyFrame(frames, frameIndex);
+    }
 
     void Awake()
     {
@@ -71,6 +102,12 @@ public class DungeonEnemy : MonoBehaviour
         }
 
         UpdateAttackAnimation();
+        if (playingHurt)
+        {
+            AnimateFrames(hurtFrames, 18f, false);
+            if (frameIndex >= (hurtFrames != null ? hurtFrames.Length - 1 : 0)) { playingHurt = false; frameIndex = 0; frameTimer = 0f; }
+            return;
+        }
         if (isAttacking || target == null || game == null) return;
 
         // Detect melee range from collider geometry instead of relying only
@@ -115,6 +152,9 @@ public class DungeonEnemy : MonoBehaviour
 
         if (path.Count > 0)
             moveDirection = (path[0] - body.position).normalized;
+
+        if (moveDirection.sqrMagnitude > 0.001f) AnimateFrames(walkFrames, 10f, true);
+        else AnimateFrames(idleFrames, 5f, true);
     }
 
     void FixedUpdate()
@@ -151,6 +191,7 @@ public class DungeonEnemy : MonoBehaviour
         if (!isAttacking) return;
 
         attackAnimationTime += Time.deltaTime;
+        AnimateFrames(attackFrames, 16f, false);
         float t = Mathf.Clamp01(attackAnimationTime / AttackDuration);
         float lunge;
 
@@ -331,13 +372,40 @@ public class DungeonEnemy : MonoBehaviour
         health -= Mathf.Max(1, damage);
         if (health <= 0)
         {
-            game.EnemyDefeated(xpReward, transform.position, coinDropChance, potionDropChance);
-            Destroy(gameObject);
+            playingDeath = true;
+            if (deathFrames != null && deathFrames.Length > 0)
+            {
+                StartCoroutine(PlayDeathAndRemove());
+            }
+            else
+            {
+                game.EnemyDefeated(xpReward, transform.position, coinDropChance, potionDropChance);
+                Destroy(gameObject);
+            }
         }
         else
         {
-            transform.localScale *= .88f;
+            playingHurt = true;
+            frameIndex = 0; frameTimer = 0f;
+            transform.localScale *= .96f;
         }
+    }
+
+    System.Collections.IEnumerator PlayDeathAndRemove()
+    {
+        isAttacking = false;
+        moveDirection = Vector2.zero;
+        frameIndex = 0; frameTimer = 0f;
+        float duration = deathFrames.Length / 12f;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            AnimateFrames(deathFrames, 12f, false);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        if (game != null) game.EnemyDefeated(xpReward, transform.position, coinDropChance, potionDropChance);
+        Destroy(gameObject);
     }
 
     // Draw a small health bar above this monster in screen space.
