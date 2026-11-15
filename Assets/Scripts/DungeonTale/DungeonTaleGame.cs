@@ -41,6 +41,9 @@ public class DungeonTaleGame : MonoBehaviour
     public Sprite[] wraith03AttackFrames;
     public Sprite[] wraith03HurtFrames;
     public Sprite[] wraith03DeathFrames;
+    public Sprite[] slime01IdleFrames, slime01WalkFrames, slime01AttackFrames, slime01HurtFrames, slime01DeathFrames;
+    public Sprite[] slime02IdleFrames, slime02WalkFrames, slime02AttackFrames, slime02HurtFrames, slime02DeathFrames;
+    public Sprite[] slime03IdleFrames, slime03WalkFrames, slime03AttackFrames, slime03HurtFrames, slime03DeathFrames;
     [Header("2D Pixel Dungeon Pack")]
     public Sprite packChestSprite, packTorchSprite, packSpikeSprite, packCoinSprite, packFlaskSprite;
     public Sprite potionRed, potionBlue, potionGreen, keySprite, swordSprite, shieldSprite, skullSprite, vaseSprite, chainSprite, boneSprite, carpetSprite;
@@ -161,7 +164,10 @@ public class DungeonTaleGame : MonoBehaviour
             int variant = (i + currentWave - 1) % 3;
             float speed = 1.35f + variant * 0.10f;
             int hp = 1 + variant + currentWave - 1;
-            SpawnWraith(variant, positions[i], speed, hp);
+            if (dungeonLevel == 2)
+                SpawnSlime(variant, positions[i], speed, hp);
+            else
+                SpawnWraith(variant, positions[i], speed, hp);
         }
         ShowMessage("WAVE " + currentWave + " / " + WavesPerLevel + " - DEFEAT ALL WRAITHS!");
         UpdateHud();
@@ -190,6 +196,72 @@ public class DungeonTaleGame : MonoBehaviour
         if (animation == 2) return wraith03AttackFrames;
         if (animation == 3) return wraith03HurtFrames;
         return wraith03DeathFrames;
+    }
+
+    Sprite[] GetSlimeFrames(int variant, int animation)
+    {
+        if (variant == 0)
+        {
+            if (animation == 0) return slime01IdleFrames;
+            if (animation == 1) return slime01WalkFrames;
+            if (animation == 2) return slime01AttackFrames;
+            if (animation == 3) return slime01HurtFrames;
+            return slime01DeathFrames;
+        }
+        if (variant == 1)
+        {
+            if (animation == 0) return slime02IdleFrames;
+            if (animation == 1) return slime02WalkFrames;
+            if (animation == 2) return slime02AttackFrames;
+            if (animation == 3) return slime02HurtFrames;
+            return slime02DeathFrames;
+        }
+        if (animation == 0) return slime03IdleFrames;
+        if (animation == 1) return slime03WalkFrames;
+        if (animation == 2) return slime03AttackFrames;
+        if (animation == 3) return slime03HurtFrames;
+        return slime03DeathFrames;
+    }
+
+    void SpawnSlime(int variant, Vector2 pos, float enemySpeed, int hp)
+    {
+        var enemyObject = new GameObject("Slime " + (variant + 1));
+        dungeonObjects.Add(enemyObject);
+        enemyObject.transform.position = pos;
+
+        var visual = new GameObject("Slime Visual");
+        visual.transform.SetParent(enemyObject.transform, false);
+        var renderer = visual.AddComponent<SpriteRenderer>();
+        Sprite[] idle = GetSlimeFrames(variant, 0);
+        renderer.sprite = idle != null && idle.Length > 0 ? idle[0] : null;
+        renderer.sortingOrder = 9;
+
+        // Use the same visible height as the Wraiths in Level 1.
+        Sprite heroReference = playerIdleSprite != null ? playerIdleSprite : heroSprite;
+        if (heroReference != null && renderer.sprite != null &&
+            heroReference.bounds.size.y > 0.001f && renderer.sprite.bounds.size.y > 0.001f)
+        {
+            float matchingScale = heroReference.bounds.size.y / renderer.sprite.bounds.size.y;
+            visual.transform.localScale = Vector3.one * matchingScale;
+        }
+
+        var collider = enemyObject.AddComponent<BoxCollider2D>();
+        collider.isTrigger = false;
+        Collider2D playerCollider = player != null ? player.GetComponent<Collider2D>() : null;
+        if (playerCollider != null)
+            Physics2D.IgnoreCollision(collider, playerCollider, true);
+
+        var brain = enemyObject.AddComponent<DungeonEnemy>();
+        brain.game = this;
+        brain.target = player;
+        brain.speed = enemySpeed + (dungeonLevel - 1) * 0.06f;
+        brain.SetHealth(hp + dungeonLevel - 1);
+        brain.SetWraithAnimations(renderer, idle, GetSlimeFrames(variant, 1), GetSlimeFrames(variant, 2),
+            GetSlimeFrames(variant, 3), GetSlimeFrames(variant, 4));
+        brain.xpReward = 30 + variant * 5;
+        brain.coinDropChance = 0.35f + variant * 0.05f;
+        brain.potionDropChance = 0.12f + variant * 0.02f;
+        brain.xpReward += Mathf.Max(0, dungeonLevel - 1) * 3;
     }
 
     void SpawnWraith(int variant, Vector2 pos, float enemySpeed, int hp)
