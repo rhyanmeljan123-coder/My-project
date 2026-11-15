@@ -53,12 +53,34 @@ public class DungeonEnemy : MonoBehaviour
             spriteRenderer.sprite = idleFrames[0];
             spriteRenderer.color = Color.white;
             spriteRenderer.enabled = true;
+            SyncColliderToVisual();
             Debug.Log("Dungeon Tale: Wraith visual assigned: " + idleFrames[0].name);
         }
         else
         {
             Debug.LogError("Dungeon Tale: Wraith has no idle sprite frames. Check CraftPix sprite import.");
         }
+    }
+
+    void SyncColliderToVisual()
+    {
+        if (spriteRenderer == null || spriteRenderer.sprite == null) return;
+
+        // The visual is a child; convert its sprite bounds into the enemy
+        // root's local space so the hitbox follows the actual rendered size.
+        var hitbox = GetComponent<BoxCollider2D>();
+        if (hitbox == null) hitbox = gameObject.AddComponent<BoxCollider2D>();
+        Vector3 scale = visualTransform != null ? visualTransform.localScale : Vector3.one;
+        Vector3 spriteSize = spriteRenderer.sprite.bounds.size;
+        Vector3 spriteCenter = spriteRenderer.sprite.bounds.center;
+        hitbox.size = new Vector2(
+            Mathf.Max(0.05f, spriteSize.x * Mathf.Abs(scale.x) * 0.9f),
+            Mathf.Max(0.05f, spriteSize.y * Mathf.Abs(scale.y) * 0.9f));
+        Vector3 childPosition = visualTransform != null ? visualTransform.localPosition : Vector3.zero;
+        hitbox.offset = new Vector2(
+            childPosition.x + spriteCenter.x * scale.x,
+            childPosition.y + spriteCenter.y * scale.y);
+        hitbox.isTrigger = false;
     }
 
     void ApplyFrame(Sprite[] frames, int index)
