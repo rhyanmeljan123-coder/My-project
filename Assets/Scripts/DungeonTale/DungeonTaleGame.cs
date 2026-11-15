@@ -188,7 +188,7 @@ public class DungeonTaleGame : MonoBehaviour
         brain.target = player;
         brain.speed = enemySpeed + (dungeonLevel - 1) * 0.06f;
         brain.SetHealth(hp + dungeonLevel - 1);
-        brain.SetWraithAnimations(idle, GetWraithFrames(variant, 1), GetWraithFrames(variant, 2),
+        brain.SetWraithAnimations(renderer, idle, GetWraithFrames(variant, 1), GetWraithFrames(variant, 2),
             GetWraithFrames(variant, 3), GetWraithFrames(variant, 4));
         brain.xpReward = 25 + variant * 5;
         brain.coinDropChance = 0.30f + variant * 0.05f;
