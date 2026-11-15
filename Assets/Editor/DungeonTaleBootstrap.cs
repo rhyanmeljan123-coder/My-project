@@ -126,6 +126,7 @@ public static class DungeonTaleBootstrap
         game.orcWalkFrames = FindCharacterFrames("Orc", "Walk");
         game.orcAttackFrames = FindCharacterFrames("Orc", "Attack01");
         AssignWraithAssets(game);
+        AssignSlimeAssets(game);
         game.slimeSprite = FindSprite("Char_Slime");
         game.skeletonSprite = FindSprite("Char_Skeletone");
         game.batSprite = FindSprite("Char_Bat");
@@ -288,6 +289,7 @@ public static class DungeonTaleBootstrap
         game.orcWalkFrames = FindCharacterFrames("Orc", "Walk");
         game.orcAttackFrames = FindCharacterFrames("Orc", "Attack01");
         AssignWraithAssets(game);
+        AssignSlimeAssets(game);
         int wraithFramesLoaded = CountFrames(game.wraith01IdleFrames) + CountFrames(game.wraith02IdleFrames) + CountFrames(game.wraith03IdleFrames);
         if (wraithFramesLoaded == 0)
             Debug.LogError("Dungeon Tale: Wraith idle sprites are still missing. Verify the CraftPix PNG folder path.");
