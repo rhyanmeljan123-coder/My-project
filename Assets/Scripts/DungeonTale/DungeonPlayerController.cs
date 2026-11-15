@@ -129,6 +129,7 @@ public class DungeonPlayerController : MonoBehaviour
     void Attack()
     {
         if (game == null) return;
+        DungeonTaleAudio.PlaySfx("sword");
 
         // Each direction has its own short swing sequence on the imported sheet.
         if (game.selectedCharacter != 0)
